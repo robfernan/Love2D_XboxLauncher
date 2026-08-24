@@ -1,0 +1,10 @@
+# Visual Studio / Rider
+.vs/
+
+# OS junk
+Thumbs.db
+.DS_Store
+
+# LÖVE
+userdata/
+*.love
