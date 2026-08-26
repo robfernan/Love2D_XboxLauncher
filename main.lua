@@ -80,6 +80,24 @@ local winModeIndex = 1
 local scalePresets = { 0.75, 1.0, 1.25, 1.5 }
 local scaleIndex = 2
 
+-- ============================================================================
+-- RESPONSIVE LAYOUT
+-- All UI geometry is expressed relative to a 1280x720 reference so the layout
+-- looks identical at any window resolution (no more dead space / cut-off).
+-- `uiScale` (user setting) multiplies on top for accessibility.
+-- ============================================================================
+local REF_W, REF_H = 1280, 720
+
+-- Current responsive scale factor (window-relative * user uiScale).
+local function layoutScale()
+  local w, h = love.graphics.getDimensions()
+  -- Scale by the smaller axis ratio so we never overflow either dimension.
+  local base = math.min(w / REF_W, h / REF_H)
+  local user = Config.get("uiScale")
+  if type(user) ~= "number" then user = 1.0 end
+  return base * user
+end
+
 -- Available dashboard color themes (Primary Accent, Background, Glow/UI Color)
 local themeColors = {
   {name = "Green",  color = {0.18, 1.00, 0.38}, bg = {0.02, 0.05, 0.03}, glow = {0.20, 1.00, 0.45}},
@@ -441,21 +459,25 @@ local function activateItem(idx)
 end
 
 -- Compute the screen-space rect for menu item `idx` at the current level.
+-- MUST match drawMenu's geometry exactly (same layoutScale-based sizing).
 local function menuItemRect(idx)
   local w, h = love.graphics.getDimensions()
+  local S = layoutScale()
   local cx, cy = w * 0.44, h * 0.5
-  local itemW, itemH, spacing = 290, 48, 12
+  local itemW, itemH, spacing = 290 * S, 48 * S, 12 * S
   local items = activeItems()
   local y = cy - (#items * (itemH + spacing)) / 2 + (idx - 1) * (itemH + spacing)
   return cx, y, itemW, itemH
 end
 
--- Renders interactive dashboard menu items with trapezoidal 3D styling and loaded icons
+-- Renders interactive dashboard menu items with trapezoidal 3D styling and loaded icons.
+-- All geometry is scaled by layoutScale() so it stays proportional at any resolution.
 local function drawMenu()
   local w, h = love.graphics.getDimensions()
+  local S = layoutScale()
   local cx, cy = w * 0.44, h * 0.5
-  local itemW, itemH = 290, 48
-  local spacing = 12
+  local itemW, itemH = 290 * S, 48 * S
+  local spacing = 12 * S
   local theme = currentTheme()
   local themeR, themeG, themeB = theme.color[1], theme.color[2], theme.color[3]
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]
@@ -466,8 +488,8 @@ local function drawMenu()
   -- Connector line linking the central planet/orb to the menu selection
   local selY = cy - (#items * (itemH + spacing)) / 2 + (curIdx - 1) * (itemH + spacing) + itemH / 2
   love.graphics.setColor(themeR, themeG, themeB, 0.4)
-  love.graphics.setLineWidth(1.5)
-  love.graphics.line(w * 0.18 + 75, cy, cx, selY)
+  love.graphics.setLineWidth(1.5 * S)
+  love.graphics.line(w * 0.18 + 75 * S, cy, cx, selY)
 
   love.graphics.setFont(bigFont)
   for i, item in ipairs(items) do
@@ -475,24 +497,24 @@ local function drawMenu()
     local isSelected = (i == curIdx)
     local selBoost = isSelected and (0.05 * math.sin(menuPulse * 6.0) + 0.05) or 0
 
-    -- Drop shadow / 3D button extrusion effect
+    -- Drop shadow / 3D button extrusion effect (scaled)
     love.graphics.setColor(0, 0, 0, 0.5)
     love.graphics.polygon("fill",
-      cx + 12, y + 10,
-      cx + itemW - 8, y + 10,
-      cx + itemW + 16, y + itemH * 0.5,
-      cx + itemW - 8, y + itemH + 10,
-      cx + 12, y + itemH + 10,
-      cx + 24, y + itemH * 0.5 + 10
+      cx + 12*S, y + 10*S,
+      cx + itemW - 8*S, y + 10*S,
+      cx + itemW + 16*S, y + itemH * 0.5,
+      cx + itemW - 8*S, y + itemH + 10*S,
+      cx + 12*S, y + itemH + 10*S,
+      cx + 24*S, y + itemH * 0.5 + 10*S
     )
     love.graphics.setColor(0.06, 0.01, 0.09, isSelected and 0.6 or 0.35)
     love.graphics.polygon("fill",
-      cx + 6, y + 5,
-      cx + itemW - 16, y + 5,
-      cx + itemW + 4, y + itemH * 0.5,
-      cx + itemW - 16, y + itemH + 5,
-      cx + 6, y + itemH + 5,
-      cx + 18, y + itemH * 0.5 + 5
+      cx + 6*S, y + 5*S,
+      cx + itemW - 16*S, y + 5*S,
+      cx + itemW + 4*S, y + itemH * 0.5,
+      cx + itemW - 16*S, y + itemH + 5*S,
+      cx + 6*S, y + itemH + 5*S,
+      cx + 18*S, y + itemH * 0.5 + 5*S
     )
 
     -- Main trapezoidal button body
@@ -505,51 +527,52 @@ local function drawMenu()
     love.graphics.setColor(baseColor[1], baseColor[2], baseColor[3], isSelected and 0.98 or 0.45)
     love.graphics.polygon("fill",
       cx, y,
-      cx + itemW - 24, y,
-      cx + itemW - 4, y + itemH * 0.5,
-      cx + itemW - 24, y + itemH,
+      cx + itemW - 24*S, y,
+      cx + itemW - 4*S, y + itemH * 0.5,
+      cx + itemW - 24*S, y + itemH,
       cx, y + itemH,
-      cx + 14, y + itemH * 0.5
+      cx + 14*S, y + itemH * 0.5
     )
 
-    -- Top surface highlight sheen
+    -- Top surface highlight sheen (scaled)
     love.graphics.setColor(1, 1, 1, isSelected and 0.15 or 0.05)
     love.graphics.polygon("fill",
-      cx + 4, y + 2,
-      cx + itemW - 26, y + 2,
-      cx + itemW - 10, y + 6,
-      cx + 4, y + 6
+      cx + 4*S, y + 2*S,
+      cx + itemW - 26*S, y + 2*S,
+      cx + itemW - 10*S, y + 6*S,
+      cx + 4*S, y + 6*S
     )
 
-    -- Draw Icon if available
-    local textOffsetX = 45
+    -- Draw Icon if available (scaled)
+    local textOffsetX = 45 * S
     if item.icon and iconCache[item.icon] then
       local iconImg = iconCache[item.icon]
       local iw, ih = iconImg:getDimensions()
-      local scale = 30 / math.max(iw, ih)
+      local scale = (30 * S) / math.max(iw, ih)
       love.graphics.setColor(1, 1, 1, isSelected and 1.0 or 0.8)
-      love.graphics.draw(iconImg, cx + 12, y + (itemH * 0.5) - (ih * scale * 0.5), 0, scale, scale)
-      textOffsetX = 52
+      love.graphics.draw(iconImg, cx + 12*S, y + (itemH * 0.5) - (ih * scale * 0.5), 0, scale, scale)
+      textOffsetX = 52 * S
     end
 
     -- Label text (Settings items carry live-updated names from the action handlers)
     love.graphics.setColor(1, 1, 1, isSelected and 1.0 or 0.6)
-    love.graphics.print(item.name, cx + textOffsetX, y + 12)
+    love.graphics.print(item.name, cx + textOffsetX, y + 12 * S)
   end
 
-  -- Animated glowing selection orb indicator next to active menu item
+  -- Animated glowing selection orb indicator next to active menu item (scaled)
   local selYAnim = cy - (#items * (itemH + spacing)) / 2 + (selectionAnim - 1) * (itemH + spacing) + itemH / 2
   love.graphics.setBlendMode("add")
   love.graphics.setColor(glowR, glowG, glowB, 0.3)
-  love.graphics.circle("fill", cx - 36, selYAnim, 26)
+  love.graphics.circle("fill", cx - 36*S, selYAnim, 26*S)
   love.graphics.setColor(glowR, glowG, glowB, 1.0)
-  love.graphics.circle("fill", cx - 36, selYAnim, 12)
+  love.graphics.circle("fill", cx - 36*S, selYAnim, 12*S)
   love.graphics.setBlendMode("alpha")
 end
 
 -- Renders the iconic Xbox glowing sphere with intersecting orbital wireframe rings across its body
 local function drawPlanetAndRings()
   local w, h = love.graphics.getDimensions()
+  local S = layoutScale()
   local cx, cy = w * 0.18, h * 0.5
   local spin = timeacc * 0.5
   local pulse = 1.0 + 0.03 * math.sin(timeacc * 2.5)
@@ -562,17 +585,17 @@ local function drawPlanetAndRings()
   love.graphics.push()
   love.graphics.translate(cx, cy)
 
-  -- 1. Outer planetary pulsing glow halos
+  -- 1. Outer planetary pulsing glow halos (scaled)
   love.graphics.setBlendMode("add")
   for i = 1, 4 do
-    local r = (70 + i * 14) * pulse
+    local r = (70 + i * 14) * S * pulse
     love.graphics.setColor(glowR, glowG, glowB, 0.12 / i)
     love.graphics.circle("fill", 0, 0, r)
   end
 
-  -- 2. Central glowing sphere body with radial gradient layers
+  -- 2. Central glowing sphere body with radial gradient layers (scaled)
   love.graphics.setBlendMode("alpha")
-  local sphereRadius = 75 * pulse
+  local sphereRadius = 75 * S * pulse
   for i = 30, 1, -1 do
     local t = i / 30
     local r = sphereRadius * t
@@ -584,12 +607,12 @@ local function drawPlanetAndRings()
     love.graphics.circle("fill", 0, 0, r)
   end
 
-  -- Core specular highlights on sphere
+  -- Core specular highlights on sphere (scaled offsets; radii already scale via sphereRadius)
   love.graphics.setBlendMode("add")
   love.graphics.setColor(glowR, glowG, glowB, 0.8)
-  love.graphics.circle("fill", -12, -12, sphereRadius * 0.3)
+  love.graphics.circle("fill", -12*S, -12*S, sphereRadius * 0.3)
   love.graphics.setColor(1.0, 1.0, 1.0, 0.5)
-  love.graphics.circle("fill", -18, -18, sphereRadius * 0.12)
+  love.graphics.circle("fill", -18*S, -18*S, sphereRadius * 0.12)
 
   -- 3. Intersecting orbital wireframe loops wrapping across the sphere surface
   local ringCount = 5
@@ -598,7 +621,7 @@ local function drawPlanetAndRings()
     local angleRot = spin * (0.4 + i * 0.2) + (i * math.pi / ringCount)
     love.graphics.rotate(angleRot)
     love.graphics.scale(1.0, 0.38)
-    love.graphics.setLineWidth(1.2)
+    love.graphics.setLineWidth(1.2 * S)
     love.graphics.setColor(themeR, themeG, themeB, 0.75)
     love.graphics.circle("line", 0, 0, sphereRadius * (0.95 + i * 0.04))
     love.graphics.pop()
@@ -610,6 +633,7 @@ end
 
 function love.draw()
   local w, h = love.graphics.getDimensions()
+  local S = layoutScale()
   local theme = currentTheme()
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]
 
@@ -658,55 +682,66 @@ function love.draw()
   love.graphics.setBlendMode("alpha")
   love.graphics.draw(planetCanvas, 0, 0)
 
-  -- 6. Render Custom Window Title Bar at the Top
+  -- 6. Render Custom Window Title Bar at the Top (responsive height/buttons)
+  local barH = 32 * S
   love.graphics.setColor(0.02, 0.02, 0.03, 0.85)
-  love.graphics.rectangle("fill", 0, 0, w, 32)
+  love.graphics.rectangle("fill", 0, 0, w, barH)
   love.graphics.setColor(glowR, glowG, glowB, 0.3)
-  love.graphics.line(0, 32, w, 32)
+  love.graphics.line(0, barH, w, barH)
 
+  local btnSize = 20 * S
+  local btnPad = 6 * S
   love.graphics.setFont(smallFont)
   love.graphics.setColor(glowR, glowG, glowB, 0.9)
-  love.graphics.print("Xbox Concept Dashboard", 14, 8)
+  love.graphics.print("Xbox Concept Dashboard", 14 * S, (barH - smallFont:getHeight()) / 2)
   love.graphics.setColor(glowR, glowG, glowB, 0.5)
-  love.graphics.print("DRAG TO MOVE", w * 0.5 - 45, 8)
+  local dragLabel = "DRAG TO MOVE"
+  love.graphics.print(dragLabel, w * 0.5 - smallFont:getWidth(dragLabel) / 2, (barH - smallFont:getHeight()) / 2)
 
-  -- Window Control Buttons (Top Right)
+  -- Window Control Buttons (Top Right, scaled)
+  local closeX = w - btnPad - btnSize
+  local minBtnX = closeX - btnSize - 8 * S
+  local btnY0 = (barH - btnSize) / 2
   -- Minimize button (-)
   love.graphics.setColor(0.15, 0.15, 0.2, 0.8)
-  love.graphics.rectangle("fill", w - 58, 6, 20, 20, 3, 3)
+  love.graphics.rectangle("fill", minBtnX, btnY0, btnSize, btnSize, 3 * S, 3 * S)
   love.graphics.setColor(1, 1, 1, 0.8)
-  love.graphics.rectangle("fill", w - 53, 15, 10, 2)
+  love.graphics.rectangle("fill", minBtnX + (btnSize - 10*S)/2, barH/2 - 1*S, 10*S, 2*S)
 
-  -- Close button (X)
+  -- Close button (X) — the ONLY way to quit the app.
   love.graphics.setColor(0.8, 0.2, 0.2, 0.8)
-  love.graphics.rectangle("fill", w - 32, 6, 20, 20, 3, 3)
+  love.graphics.rectangle("fill", closeX, btnY0, btnSize, btnSize, 3 * S, 3 * S)
   love.graphics.setColor(1, 1, 1, 0.9)
-  love.graphics.print("x", w - 26, 7)
+  local xLabel = "x"
+  love.graphics.print(xLabel, closeX + (btnSize - smallFont:getWidth(xLabel))/2, btnY0 + (btnSize - smallFont:getHeight())/2)
 
   -- 7. Render Menu UI Elements
   drawMenu()
 
-  -- 8. Controller / Key Action Hints (Pinned cleanly toward the left side)
-  local btnY = h - 28
-  local startX = 40
+  -- 8. Controller / Key Action Hints (responsive, pinned bottom-left)
+  local hintR = 11 * S
+  local btnY = h - 28 * S
+  local startX = 40 * S
   love.graphics.setFont(smallFont)
-  
-  -- Back Button (B)
+
+  -- Back Button (B) — goes back one level; does NOT quit at MAIN.
   love.graphics.setColor(1.0, 0.2, 0.2)
-  love.graphics.circle("fill", startX + 11, btnY, 11)
+  love.graphics.circle("fill", startX + hintR, btnY, hintR)
   love.graphics.setColor(0, 0, 0)
-  love.graphics.print("B", startX + 7, btnY - 7)
+  local bLabel = "B"
+  love.graphics.print(bLabel, startX + hintR - smallFont:getWidth(bLabel)/2, btnY - smallFont:getHeight()/2)
   love.graphics.setColor(glowR, glowG, glowB)
-  love.graphics.print("BACK", startX + 28, btnY - 7)
+  love.graphics.print("BACK", startX + hintR*2 + 8*S, btnY - smallFont:getHeight()/2)
 
   -- Select Button (A)
-  local selectX = startX + 110
+  local selectX = startX + 110 * S
   love.graphics.setColor(0.18, 0.85, 0.35)
-  love.graphics.circle("fill", selectX + 11, btnY, 11)
+  love.graphics.circle("fill", selectX + hintR, btnY, hintR)
   love.graphics.setColor(0, 0, 0)
-  love.graphics.print("A", selectX + 7, btnY - 7)
+  local aLabel = "A"
+  love.graphics.print(aLabel, selectX + hintR - smallFont:getWidth(aLabel)/2, btnY - smallFont:getHeight()/2)
   love.graphics.setColor(glowR, glowG, glowB)
-  love.graphics.print("SELECT", selectX + 28, btnY - 7)
+  love.graphics.print("SELECT", selectX + hintR*2 + 8*S, btnY - smallFont:getHeight()/2)
 end
 
 -- ============================================================================
@@ -728,34 +763,50 @@ function love.mousemoved(x, y)
   hoverIndex = found
 end
 
+-- Compute the responsive title-bar button rects (must match love.draw's layout).
+local function titleBarButtons()
+  local w, h = love.graphics.getDimensions()
+  local S = layoutScale()
+  local barH = 32 * S
+  local btnSize = 20 * S
+  local btnPad = 6 * S
+  local closeX = w - btnPad - btnSize
+  local minBtnX = closeX - btnSize - 8 * S
+  local btnY0 = (barH - btnSize) / 2
+  return {
+    close = { x = closeX, y = btnY0, w = btnSize, h = btnSize },
+    minimize = { x = minBtnX, y = btnY0, w = btnSize, h = btnSize },
+    barH = barH,
+  }
+end
+
+local function pointInRect(px, py, r)
+  return px >= r.x and px <= r.x + r.w and py >= r.y and py <= r.y + r.h
+end
+
+-- Track press origin so we can distinguish a click from a drag on release.
+local pressX, pressY = 0, 0
+local DRAG_THRESHOLD = 6   -- pixels of movement before a press counts as a drag
+
 function love.mousepressed(x, y, button)
   mouseX, mouseY = x, y
   if button == 1 then
-    local w = love.graphics.getWidth()
-    -- Close button (top-right X) — only quit path besides keyboard B/Esc.
-    if x >= w - 32 and x <= w - 12 and y >= 6 and y <= 26 then
+    local btns = titleBarButtons()
+    -- Close button (top-right X) — the ONLY way to quit the app.
+    if pointInRect(x, y, btns.close) then
       Config.save()
       love.event.quit()
       return
     end
     -- Minimize button (top-right dash)
-    if x >= w - 58 and x <= w - 38 and y >= 6 and y <= 26 then
+    if pointInRect(x, y, btns.minimize) then
       Config.save()
       love.window.minimize()
       return
     end
 
-    -- If the click landed on a menu item, activate it (and don't start a drag).
-    local items = activeItems()
-    for i = 1, #items do
-      local ix, iy, iw, ih = menuItemRect(i)
-      if x >= ix and x <= ix + iw and y >= iy and y <= iy + ih then
-        activateItem(i)
-        return
-      end
-    end
-
-    -- Otherwise treat as a window drag.
+    -- Remember press origin; we decide click-vs-drag on release.
+    pressX, pressY = x, y
     isDragging = true
     dragX, dragY = x, y
   end
@@ -764,9 +815,24 @@ end
 function love.mousereleased(x, y, button)
   if button == 1 and isDragging then
     isDragging = false
-    local wx, wy = love.window.getPosition()
-    Config.set("window.x", math.floor(wx))
-    Config.set("window.y", math.floor(wy))
+    local dx, dy = math.abs(x - pressX), math.abs(y - pressY)
+    if dx > DRAG_THRESHOLD or dy > DRAG_THRESHOLD then
+      -- It was a drag: persist the new window position.
+      local wx, wy = love.window.getPosition()
+      Config.set("window.x", math.floor(wx))
+      Config.set("window.y", math.floor(wy))
+    else
+      -- It was a click (barely moved): activate the menu item under the cursor,
+      -- if any. This keeps clicks clean and separate from drags.
+      local items = activeItems()
+      for i = 1, #items do
+        local ix, iy, iw, ih = menuItemRect(i)
+        if x >= ix and x <= ix + iw and y >= iy and y <= iy + ih then
+          activateItem(i)
+          break
+        end
+      end
+    end
   end
 end
 
@@ -815,13 +881,13 @@ function love.keypressed(key)
     activateItem(activeIndex())
   end
 
+  -- B / Escape only go BACK one level. At the MAIN menu they do nothing —
+  -- the app can ONLY be quit via the title-bar X button (per design).
   if key == "b" or key == "escape" then
     if currentMenuLevel ~= "MAIN" then
       currentMenuLevel = "MAIN"
       hoverIndex = 0
       selectionAnim = selected
-    else
-      love.event.quit()
     end
   end
 end
