@@ -4,14 +4,21 @@
 -- orbital planets, radar grid backgrounds, and a draggable frameless window.
 -- ============================================================================
 
+-- Persistent settings (theme, window mode/size). Loaded in love.load().
+local Config = require("core.config")
+
 local timeacc = 0
 local selected = 1
-local activeTheme = 4
+local activeTheme = 4   -- initialized from Config in love.load()
 local bigFont, smallFont, tinyFont
 local bgCanvas, planetCanvas
 local selectionAnim = 1.0
 local menuPulse = 0
 local blurShader, bloomA, bloomB
+
+-- Mouse state: hovered item index (per current level) + last mouse position.
+local mouseX, mouseY = 0, 0
+local hoverIndex = 0        -- 0 = nothing hovered; otherwise 1-based item index
 
 -- Navigation State Machine
 local currentMenuLevel = "MAIN" -- "MAIN" or category name like "GAMES", "BROWSE", "MEDIA", "SETTINGS"
@@ -40,13 +47,38 @@ local menuData = {
     { name = "Crunchyroll",url = "https://crunchyroll.com",        icon = "icons/crunchyroll_icon.png" },
   }},
   { name = "SETTINGS", id = "SETTINGS", items = {
-    { name = "Theme Cycle", action = "CYCLE_THEME",                icon = "icons/theme_icon.png" },
+    { name = "Theme: Purple",        action = "CYCLE_THEME",   icon = "icons/theme_icon.png" },
+    { name = "Resolution: 1280x720", action = "CYCLE_RES",     icon = nil },
+    { name = "Fullscreen: Off",      action = "TOGGLE_FS",     icon = nil },
+    { name = "Window: Borderless",   action = "CYCLE_WINMODE", icon = nil },
+    { name = "UI Scale: 100%",       action = "CYCLE_SCALE",   icon = nil },
   }}
 }
 
 -- Window dragging state variables
 local isDragging = false
 local dragX, dragY = 0, 0
+
+-- Resolution presets (cycled by the Settings > Resolution item).
+local resPresets = {
+  { w = 1280, h = 720 },
+  { w = 1600, h = 900 },
+  { w = 1920, h = 1080 },
+  { w = 2560, h = 1440 },
+}
+local resIndex = 1
+
+-- Window mode cycle: borderless -> windowed(resizable) -> fullscreen(desktop)
+local winModes = {
+  { name = "Borderless", borderless = true,  resizable = false, fullscreen = false },
+  { name = "Windowed",   borderless = false, resizable = true,  fullscreen = false },
+  { name = "Fullscreen", borderless = true,  resizable = false, fullscreen = true  },
+}
+local winModeIndex = 1
+
+-- UI scale presets (cycled by Settings > UI Scale).
+local scalePresets = { 0.75, 1.0, 1.25, 1.5 }
+local scaleIndex = 2
 
 -- Available dashboard color themes (Primary Accent, Background, Glow/UI Color)
 local themeColors = {
@@ -66,9 +98,86 @@ local function themeCount()
   return #themeColors
 end
 
--- Cycle through available color themes
+-- Cycle through available color themes (and persist the choice).
 local function cycleTheme(delta)
   activeTheme = ((activeTheme - 1 + delta) % themeCount()) + 1
+  Config.set("theme.index", activeTheme)
+  -- Keep the Settings label live.
+  local cat = menuData[4]
+  if cat and cat.items then
+    for _, it in ipairs(cat.items) do
+      if it.action == "CYCLE_THEME" then it.name = "Theme: " .. currentTheme().name end
+    end
+  end
+end
+
+-- Apply a window mode (borderless / windowed / fullscreen) live and persist it.
+local function applyWindowMode(idx)
+  winModeIndex = ((idx - 1) % #winModes + 1)
+  local m = winModes[winModeIndex]
+  Config.set("window.borderless", m.borderless)
+  Config.set("window.resizable", m.resizable)
+  Config.set("window.fullscreen", m.fullscreen)
+  love.window.setMode(
+    Config.get("window.width") or 1280,
+    Config.get("window.height") or 720,
+    { borderless = m.borderless, resizable = m.resizable, fullscreen = m.fullscreen, vsync = true }
+  )
+  -- Keep the Settings label live.
+  local cat = menuData[4]
+  if cat and cat.items then
+    for _, it in ipairs(cat.items) do
+      if it.action == "CYCLE_WINMODE" then it.name = "Window: " .. m.name end
+    end
+  end
+end
+
+-- Cycle resolution preset, apply live, persist.
+local function cycleResolution(delta)
+  resIndex = ((resIndex - 1 + delta) % #resPresets + 1)
+  local p = resPresets[resIndex]
+  Config.set("window.width", p.w)
+  Config.set("window.height", p.h)
+  -- Re-apply current window mode at the new size.
+  applyWindowMode(winModeIndex)
+  -- Keep the Settings label live.
+  local cat = menuData[4]
+  if cat and cat.items then
+    for _, it in ipairs(cat.items) do
+      if it.action == "CYCLE_RES" then it.name = string.format("Resolution: %dx%d", p.w, p.h) end
+    end
+  end
+end
+
+-- Toggle fullscreen on/off (quick action).
+local function toggleFullscreen()
+  local isFs = Config.get("window.fullscreen")
+  if type(isFs) ~= "boolean" then isFs = false end
+  -- Switch to the Fullscreen mode preset, or back to Borderless.
+  applyWindowMode(isFs and 1 or 3)
+  -- Keep the Settings label live.
+  local cat = menuData[4]
+  if cat and cat.items then
+    for _, it in ipairs(cat.items) do
+      if it.action == "TOGGLE_FS" then
+        it.name = (Config.get("window.fullscreen") and true or false) and "Fullscreen: On" or "Fullscreen: Off"
+      end
+    end
+  end
+end
+
+-- Cycle UI scale preset, persist.
+local function cycleScale(delta)
+  scaleIndex = ((scaleIndex - 1 + delta) % #scalePresets + 1)
+  local s = scalePresets[scaleIndex]
+  Config.set("uiScale", s)
+  -- Keep the Settings label live.
+  local cat = menuData[4]
+  if cat and cat.items then
+    for _, it in ipairs(cat.items) do
+      if it.action == "CYCLE_SCALE" then it.name = string.format("UI Scale: %d%%", math.floor(s * 100)) end
+    end
+  end
 end
 
 -- Load and cache all icons defined in menuData safely
@@ -112,10 +221,97 @@ local function drawRadarBackground(w, h)
   love.graphics.pop()
 end
 
+-- Apply a saved theme index (clamped to the valid range).
+local function applyThemeIndex(idx)
+  local n = themeCount()
+  activeTheme = ((idx - 1) % n + 1)
+end
+
+-- Clamp the window so it can never be dragged fully off-screen.
+-- Uses love.window.getDesktopDimensions() (valid in update/draw on LÖVE 11 & 12),
+-- falling back to getScreenSize for older builds.
+local function desktopSize()
+  if love.window.getDesktopDimensions then
+    local w, h = love.window.getDesktopDimensions()
+    return w or 1920, h or 1080
+  end
+  -- LÖVE 11 fallback
+  if love.graphics.getScreenSize then
+    local w, h = love.graphics.getScreenSize()
+    return w, h
+  end
+  return 1920, 1080
+end
+
+local function windowSize()
+  -- LÖVE 12: graphics.getWidth/Height give the current window size.
+  if love.graphics.getWidth then
+    return love.graphics.getWidth(), love.graphics.getHeight()
+  end
+  -- LÖVE 11 fallback
+  if love.window.getDimensions then
+    return love.window.getDimensions()
+  end
+  return 800, 600
+end
+
+local function clampWindowPosition(x, y)
+  local ww, wh = windowSize()
+  local sw, sh = desktopSize()
+  local minx = -(ww - math.min(120, ww))         -- keep at least 120px visible
+  local maxx = sw - math.min(120, ww)
+  local miny = -(wh - math.min(60, wh))
+  local maxy = sh - math.min(60, wh)
+  if x < minx then x = minx end
+  if x > maxx then x = maxx end
+  if y < miny then y = miny end
+  if y > maxy then y = maxy end
+  return x, y
+end
+
 function love.load()
+  -- Load persistent settings first so window/theme reflect the last session.
+  Config.load()
+  applyThemeIndex(Config.get("theme.index") or activeTheme)
+
+  local winW = Config.get("window.width") or 1280
+  local winH = Config.get("window.height") or 720
+  local borderless = Config.get("window.borderless")
+  if type(borderless) ~= "boolean" then borderless = true end
+  local resizable = Config.get("window.resizable")
+  if type(resizable) ~= "boolean" then resizable = false end
+  local fullscreen = Config.get("window.fullscreen")
+  if type(fullscreen) ~= "boolean" then fullscreen = false end
+
+  -- Sync the Settings state (resIndex / winModeIndex / scaleIndex) to saved values.
+  for i, p in ipairs(resPresets) do
+    if p.w == winW and p.h == winH then resIndex = i break end
+  end
+  if fullscreen then
+    winModeIndex = 3
+  elseif borderless then
+    winModeIndex = 1
+  else
+    winModeIndex = 2
+  end
+  local savedScale = Config.get("uiScale")
+  if type(savedScale) == "number" then
+    for i, s in ipairs(scalePresets) do
+      if math.abs(s - savedScale) < 0.01 then scaleIndex = i break end
+    end
+  end
+
   love.window.setTitle("Xbox Concept Dashboard")
-  -- Configure window: non-resizable, borderless (frameless), vsync enabled
-  love.window.setMode(1152, 648, {resizable=false, borderless=true, vsync=true})
+  -- Configure window from saved settings (frameless, vsync enabled).
+  love.window.setMode(winW, winH, {resizable=resizable, borderless=borderless, fullscreen=fullscreen, vsync=true})
+
+  -- Restore last window position if we have one.
+  local savedX = Config.get("window.x")
+  local savedY = Config.get("window.y")
+  if type(savedX) == "number" and type(savedY) == "number" then
+    local cx, cy = clampWindowPosition(savedX, savedY)
+    love.window.setPosition(cx, cy)
+  end
 
   -- Inline separable Gaussian blur shader for the bloom effect
   local blurCode = [[
@@ -139,10 +335,17 @@ function love.load()
   ]]
   pcall(function() blurShader = love.graphics.newShader(blurCode) end)
 
-  -- Initialize fonts
-  bigFont = love.graphics.newFont(20)
-  smallFont = love.graphics.newFont(14)
-  tinyFont = love.graphics.newFont(10)
+  -- Initialize fonts using the bundled arial.ttf (falls back to default if missing).
+  local function makeFont(size)
+    local ok, f = pcall(function()
+      return love.graphics.newFont("arial.ttf", size)
+    end)
+    if ok and f then return f end
+    return love.graphics.newFont(size)   -- safe fallback
+  end
+  bigFont = makeFont(20)
+  smallFont = makeFont(14)
+  tinyFont = makeFont(10)
 
   -- Initialize render canvases for background and blooming layers
   local w, h = love.graphics.getDimensions()
@@ -172,8 +375,79 @@ function love.update(dt)
   if isDragging then
     local mx, my = love.mouse.getPosition()
     local wx, wy = love.window.getPosition()
-    love.window.setPosition(wx + (mx - dragX), wy + (my - dragY))
+    local nx, ny = clampWindowPosition(wx + (mx - dragX), wy + (my - dragY))
+    love.window.setPosition(nx, ny)
   end
+end
+
+-- ============================================================================
+-- SHARED MENU HELPERS (used by both keyboard and mouse paths)
+-- Defined BEFORE drawMenu so it can call them at runtime.
+-- ============================================================================
+
+-- Return the list of items visible at the current menu level.
+local function activeItems()
+  if currentMenuLevel == "MAIN" then
+    local out = {}
+    for _, cat in ipairs(menuData) do table.insert(out, { name = cat.name }) end
+    return out
+  end
+  for _, cat in ipairs(menuData) do
+    if cat.id == currentMenuLevel then return cat.items or {} end
+  end
+  return {}
+end
+
+-- Return the currently active (selected/hovered) 1-based index.
+local function activeIndex()
+  if hoverIndex > 0 then return hoverIndex end
+  return (currentMenuLevel == "MAIN") and selected or subSelected
+end
+
+-- Perform the action for a given item at the current level (select/launch/cycle).
+local function activateItem(idx)
+  local items = activeItems()
+  local item = items[idx]
+  if not item then return end
+
+  if currentMenuLevel == "MAIN" then
+    -- Enter the category.
+    local cat = menuData[idx]
+    if cat then
+      currentMenuLevel = cat.id
+      subSelected = 1
+      selected = idx
+      hoverIndex = 0
+      selectionAnim = 1
+    end
+    return
+  end
+
+  -- Sub-menu item: run its action.
+  local action = item.action
+  if action == "CYCLE_THEME" then
+    cycleTheme(1)
+  elseif action == "CYCLE_RES" then
+    cycleResolution(1)
+  elseif action == "TOGGLE_FS" then
+    toggleFullscreen()
+  elseif action == "CYCLE_WINMODE" then
+    applyWindowMode(winModeIndex + 1)
+  elseif action == "CYCLE_SCALE" then
+    cycleScale(1)
+  elseif item.url then
+    love.system.openURL(item.url)
+  end
+end
+
+-- Compute the screen-space rect for menu item `idx` at the current level.
+local function menuItemRect(idx)
+  local w, h = love.graphics.getDimensions()
+  local cx, cy = w * 0.44, h * 0.5
+  local itemW, itemH, spacing = 290, 48, 12
+  local items = activeItems()
+  local y = cy - (#items * (itemH + spacing)) / 2 + (idx - 1) * (itemH + spacing)
+  return cx, y, itemW, itemH
 end
 
 -- Renders interactive dashboard menu items with trapezoidal 3D styling and loaded icons
@@ -186,29 +460,19 @@ local function drawMenu()
   local themeR, themeG, themeB = theme.color[1], theme.color[2], theme.color[3]
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]
 
-  local activeItems = {}
-  if currentMenuLevel == "MAIN" then
-    for _, cat in ipairs(menuData) do table.insert(activeItems, {name = cat.name}) end
-  else
-    for _, cat in ipairs(menuData) do
-      if cat.id == currentMenuLevel then
-        activeItems = cat.items
-      end
-    end
-  end
-
-  local activeIndex = (currentMenuLevel == "MAIN") and selected or subSelected
+  local items = activeItems()
+  local curIdx = activeIndex()
 
   -- Connector line linking the central planet/orb to the menu selection
-  local selY = cy - (#activeItems * (itemH + spacing)) / 2 + (activeIndex - 1) * (itemH + spacing) + itemH / 2
+  local selY = cy - (#items * (itemH + spacing)) / 2 + (curIdx - 1) * (itemH + spacing) + itemH / 2
   love.graphics.setColor(themeR, themeG, themeB, 0.4)
   love.graphics.setLineWidth(1.5)
   love.graphics.line(w * 0.18 + 75, cy, cx, selY)
 
   love.graphics.setFont(bigFont)
-  for i, item in ipairs(activeItems) do
-    local y = cy - (#activeItems * (itemH + spacing)) / 2 + (i - 1) * (itemH + spacing)
-    local isSelected = (i == activeIndex)
+  for i, item in ipairs(items) do
+    local y = cy - (#items * (itemH + spacing)) / 2 + (i - 1) * (itemH + spacing)
+    local isSelected = (i == curIdx)
     local selBoost = isSelected and (0.05 * math.sin(menuPulse * 6.0) + 0.05) or 0
 
     -- Drop shadow / 3D button extrusion effect
@@ -268,17 +532,13 @@ local function drawMenu()
       textOffsetX = 52
     end
 
-    -- Label text
+    -- Label text (Settings items carry live-updated names from the action handlers)
     love.graphics.setColor(1, 1, 1, isSelected and 1.0 or 0.6)
-    local displayText = item.name
-    if currentMenuLevel == "SETTINGS" and item.action == "CYCLE_THEME" then
-      displayText = "Theme: " .. currentTheme().name
-    end
-    love.graphics.print(displayText, cx + textOffsetX, y + 12)
+    love.graphics.print(item.name, cx + textOffsetX, y + 12)
   end
 
   -- Animated glowing selection orb indicator next to active menu item
-  local selYAnim = cy - (#activeItems * (itemH + spacing)) / 2 + (selectionAnim - 1) * (itemH + spacing) + itemH / 2
+  local selYAnim = cy - (#items * (itemH + spacing)) / 2 + (selectionAnim - 1) * (itemH + spacing) + itemH / 2
   love.graphics.setBlendMode("add")
   love.graphics.setColor(glowR, glowG, glowB, 0.3)
   love.graphics.circle("fill", cx - 36, selYAnim, 26)
@@ -449,42 +709,76 @@ function love.draw()
   love.graphics.print("SELECT", selectX + 28, btnY - 7)
 end
 
--- Mouse press handling for custom title bar buttons and window dragging
+-- ============================================================================
+-- MOUSE INPUT: hover tracking + click-to-activate + title bar buttons + drag.
+-- ============================================================================
+
+function love.mousemoved(x, y)
+  mouseX, mouseY = x, y
+  -- Update hover index based on which menu item the cursor is over.
+  local items = activeItems()
+  local found = 0
+  for i = 1, #items do
+    local ix, iy, iw, ih = menuItemRect(i)
+    if x >= ix and x <= ix + iw and y >= iy and y <= iy + ih then
+      found = i
+      break
+    end
+  end
+  hoverIndex = found
+end
+
 function love.mousepressed(x, y, button)
+  mouseX, mouseY = x, y
   if button == 1 then
     local w = love.graphics.getWidth()
+    -- Close button (top-right X) — only quit path besides keyboard B/Esc.
     if x >= w - 32 and x <= w - 12 and y >= 6 and y <= 26 then
+      Config.save()
       love.event.quit()
       return
     end
+    -- Minimize button (top-right dash)
     if x >= w - 58 and x <= w - 38 and y >= 6 and y <= 26 then
+      Config.save()
       love.window.minimize()
       return
     end
 
+    -- If the click landed on a menu item, activate it (and don't start a drag).
+    local items = activeItems()
+    for i = 1, #items do
+      local ix, iy, iw, ih = menuItemRect(i)
+      if x >= ix and x <= ix + iw and y >= iy and y <= iy + ih then
+        activateItem(i)
+        return
+      end
+    end
+
+    -- Otherwise treat as a window drag.
     isDragging = true
     dragX, dragY = x, y
   end
 end
 
 function love.mousereleased(x, y, button)
-  if button == 1 then
+  if button == 1 and isDragging then
     isDragging = false
+    local wx, wy = love.window.getPosition()
+    Config.set("window.x", math.floor(wx))
+    Config.set("window.y", math.floor(wy))
   end
 end
 
--- Keyboard navigation controls with hierarchical sub-menus and link launching
+-- Keyboard navigation controls with hierarchical sub-menus and link launching.
+-- Uses the same shared helpers as the mouse path so both stay in sync.
 function love.keypressed(key)
-  local maxItems = 4
-  if currentMenuLevel == "MAIN" then
-    maxItems = #menuData
-  else
-    for _, cat in ipairs(menuData) do
-      if cat.id == currentMenuLevel then
-        maxItems = #cat.items
-      end
-    end
-  end
+  local items = activeItems()
+  local maxItems = #items
+  if maxItems == 0 then return end
+
+  -- Track keyboard selection separately from hover; clear hover when using keys.
+  hoverIndex = 0
 
   if key == "down" then
     if currentMenuLevel == "MAIN" then
@@ -502,38 +796,42 @@ function love.keypressed(key)
     end
   end
 
+  -- Left/Right cycles the *currently highlighted* Settings option (theme/res/fs/scale).
   if currentMenuLevel == "SETTINGS" and (key == "left" or key == "right") then
-    cycleTheme(key == "right" and 1 or -1)
+    local delta = (key == "right") and 1 or -1
+    local idx = activeIndex()
+    local item = items[idx]
+    if item then
+      if item.action == "CYCLE_THEME" then cycleTheme(delta)
+      elseif item.action == "CYCLE_RES" then cycleResolution(delta)
+      elseif item.action == "TOGGLE_FS" then toggleFullscreen()
+      elseif item.action == "CYCLE_WINMODE" then applyWindowMode(winModeIndex + delta)
+      elseif item.action == "CYCLE_SCALE" then cycleScale(delta)
+      end
+    end
   end
 
   if key == "a" or key == "return" or key == "kpenter" then
-    if currentMenuLevel == "MAIN" then
-      local chosenCategory = menuData[selected]
-      currentMenuLevel = chosenCategory.id
-      subSelected = 1
-      selectionAnim = subSelected
-    else
-      for _, cat in ipairs(menuData) do
-        if cat.id == currentMenuLevel then
-          local item = cat.items[subSelected]
-          if item then
-            if item.action == "CYCLE_THEME" then
-              cycleTheme(1)
-            elseif item.url then
-              love.system.openURL(item.url)
-            end
-          end
-        end
-      end
-    end
+    activateItem(activeIndex())
   end
 
   if key == "b" or key == "escape" then
     if currentMenuLevel ~= "MAIN" then
       currentMenuLevel = "MAIN"
+      hoverIndex = 0
       selectionAnim = selected
     else
       love.event.quit()
     end
   end
+end
+
+-- Guarantee settings are written on every exit path (keyboard quit, window X,
+-- OS close). Config.save() is a no-op when nothing changed.
+function love.quit()
+  -- Remember final window position one last time.
+  local wx, wy = love.window.getPosition()
+  Config.set("window.x", math.floor(wx))
+  Config.set("window.y", math.floor(wy))
+  Config.save()
 end
