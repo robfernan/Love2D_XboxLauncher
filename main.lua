@@ -22,6 +22,7 @@ local Settings = require("core.settings")
 local Menu     = require("core.menu")
 local Layout   = require("core.layout")
 local Render   = require("core.render")
+local Wizard   = require("core.wizard")
 
 -------------------------------------------------------------------------------
 -- Window geometry helpers (LÖVE 11/12 compatible).
@@ -177,6 +178,10 @@ end
 
 function love.draw()
   Render.frame()
+  -- Add-shortcut wizard overlay (drawn on top when open).
+  if Wizard.isOpen() then
+    Wizard.render()
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -238,6 +243,11 @@ end
 -------------------------------------------------------------------------------
 
 function love.keypressed(key)
+  -- While the add-shortcut wizard is open, it owns all keyboard input.
+  if Wizard.isOpen() and Wizard.keypressed(key) then
+    return
+  end
+
   if key == "down" then
     Menu.moveSelection(1)
   elseif key == "up" then

@@ -1,9 +1,17 @@
+> **STATUS (2026-08-26):** The two foundational pillars below are now **built and working**.
+> ✅ Configurable resolution / window system — done (`core/settings.lua`, `core/config.lua`).
+> ✅ “Add Your Own Apps” wizard + Shortcut Manager + App Launcher — done (`core/wizard.lua`, `core/shortcuts.lua`, `core/launcher.lua`).
+>
+> The rest of this document is the roadmap. Items marked **✅ DONE** are implemented; everything else is still ahead.
+
+---
+
 You’re thinking exactly like someone who’s about to turn a cool prototype into a real desktop application.
-Right now your launcher looks professional, but it doesn’t behave like professional software yet — because it’s missing the two pillars you just identified:
+The two pillars that make it behave like professional software:
 
-Configurable resolution / window system
+Configurable resolution / window system — ✅ DONE
 
-A user-facing “Add Your Own Apps” wizard
+A user-facing “Add Your Own Apps” wizard — ✅ DONE (plus an App Launcher for local programs)
 
 Those two features are what transform your project from “demo” into “daily‑driver launcher.”
 
@@ -182,9 +190,23 @@ Nebula
 
 Solid color
 
-🧱 4. Architecture You Need to Add
-Your project is currently one giant main.lua.
-To support resolution settings + shortcut wizard, you need modules:
+🧱 4. Architecture You Need to Add — ✅ DONE (adapted)
+`main.lua` is now a thin LÖVE bootstrap; all logic lives in `core/`. The actual layout:
+
+Code
+core/
+    config.lua      — persistent settings (config.json)   ✅
+    state.lua       — shared runtime state                ✅
+    themes.lua      — color theme profiles                ✅
+    menu_data.lua   — built-in category/item tree         ✅
+    shortcuts.lua   — Shortcut Manager (add/remove/reorder) ✅
+    launcher.lua    — App Launcher (spawn apps / open URLs) ✅
+    wizard.lua      — in-app “Add Shortcut” form          ✅
+    settings.lua    — resolution / window-mode / scale     ✅
+    layout.lua      — responsive geometry + hit-tests      ✅
+    menu.lua        — navigation state machine             ✅
+    render.lua      — all drawing                          ✅
+    json.lua        — dependency-free JSON                  ✅
 
 Code
 /core
@@ -209,59 +231,21 @@ Code
     config.json
 This is the structure of a real application.
 
-🚀 5. What You Should Build First (Recommended Order)
-Step 1 — Config system
-config.json
-
-load/save
-
-resolution
-
-fullscreen
-
-theme
-
-Step 2 — Shortcut Manager
-shortcuts.json
-
-load/save
-
-dynamic menu merging
-
-Step 3 — Wizard UI
-multi-step UI
-
-icon picker
-
-category picker
-
-Step 4 — Settings Menu Expansion
-resolution
-
-fullscreen
-
-UI scale
-
-theme editor
-
-Step 5 — Refactor into modules
-Move everything out of main.lua.
+🚀 5. What You Should Build First (Recommended Order) — ✅ ALL DONE
+Step 1 — Config system — ✅ config.json load/save, resolution, fullscreen, theme.
+Step 2 — Shortcut Manager — ✅ add/remove/reorder, dynamic menu merging (persisted under `shortcuts` in config.json).
+Step 3 — Wizard UI — ✅ multi-field form with category picker + free-text entry. (Icon picker still ahead.)
+Step 4 — Settings Menu Expansion — ✅ resolution presets, fullscreen toggle, UI scale. (Custom theme editor still ahead.)
+Step 5 — Refactor into modules — ✅ everything moved out of main.lua into core/.
 
 
 🟫 6. What You Need to Build Next
 Here’s the exact roadmap to turn your launcher into a package manager + customizable OS shell.
 
-1. Shortcut Manager System
-Handles adding/editing/removing apps.
-
-2. Wizard UI
-Multi-step flow for adding apps.
-
-3. Category Manager
-Users can rename, reorder, delete, or add categories.
-
-4. Theme Engine
-Users can create their own themes.
+1. Shortcut Manager System — ✅ DONE (add/remove/reorder; edit-in-place still ahead).
+2. Wizard UI — ✅ DONE (Add flow; Edit flow still ahead).
+3. Category Manager — ⬜ Users can rename, reorder, delete, or add categories.
+4. Theme Engine — ⬜ Users can create their own themes.
 
 🟩 7. And Yes — You Can Sell It
 A $0.99 price point is perfect or free similar to WallpaperEngine but will be more of a theme/launcher:
@@ -302,30 +286,22 @@ And still keep it open source.
 Here's a comprehensive production-readiness checklist for your Xbox Concept Dashboard, organized by category and priority:
 
 1. Architecture & Code Quality
-Modularize main.lua — Split into core/ (window, config, shortcuts), ui/ (menu, wizard, transitions), states/ (mainmenu, settings, wizard_add, wizard_edit)
-Add a proper state machine — Replace the currentMenuLevel string check with a clean state system for scalability
-Remove dead code — arial.ttf is loaded but unused; shaders/blur.glsl and shaders/rings.glsl are not referenced
+Modularize main.lua — ✅ DONE (split into core/: config, shortcuts, launcher, wizard, settings, layout, menu, render)
+Add a proper state machine — ⬜ Replace the currentMenuLevel string check with a clean state system for scalability
+Remove dead code — ✅ arial.ttf is now used; shaders/blur.glsl is loaded by main.lua. (shaders/rings.glsl still reference-only.)
 Add input abstraction layer — Separate keyboard/gamepad/mouse handling from game logic for easier testing
 Implement proper error handling — Wrap all file I/O, shader loading, and icon loading with meaningful error messages and fallbacks
 Add logging system — Use love.event.push("quit") patterns and a simple logger for debugging
 2. Configuration & Persistence
-Config system — Save/load config.json via love.filesystem.getSaveDirectory()
-Theme selection
-Window mode (borderless, fullscreen, windowed)
-Resolution presets (1280×720, 1920×1080, 2560×1440, 3840×2160)
-UI scale factor
-Shortcut manager — Store user apps in shortcuts.json
-Add/edit/delete shortcuts
-Custom categories
-Icon paths
-URL/command targets
-Theme persistence — Remember last-used theme across sessions
-Window position memory — Save/restore window position (optional, but nice for multi-monitor)
+Config system — ✅ DONE (config.json load/save; theme, window mode, resolution presets 720p→1440p, UI scale)
+Shortcut manager — ✅ DONE (add/remove/reorder user apps; URL + local-command targets). ⬜ Edit-in-place, custom categories, icon picker.
+Theme persistence — ✅ Remember last-used theme across sessions
+Window position memory — ✅ Save/restore window position
 3. UI/UX Polish
-Animated transitions — Smooth fade/slide between menu levels, not instant jumps
-Selection feedback — Add a subtle scale-up or glow pulse on hover/select (you have selBoost but it's minimal)
-Sound design — Add UI tick sounds for navigation, swoosh for transitions, click for selection (use love.audio)
-Mouse hover support — Currently only keyboard navigation; add mouse hover + click to select menu items
+Animated transitions — ⬜ Smooth fade/slide between menu levels, not instant jumps
+Selection feedback — ✅ glow pulse on select (selBoost); ⬜ scale-up on hover
+Sound design — ⬜ Add UI tick sounds for navigation, swoosh for transitions, click for selection (use love.audio)
+Mouse hover support — ✅ DONE (hover + click-to-select menu items)
 Context-sensitive help — Show a brief tooltip or help overlay on first launch
 Error states — Graceful messages when a URL fails to open or an app is not found
 Loading screen — Add a brief animated loading state while icons/shaders initialize
@@ -338,8 +314,8 @@ Cache frequently-used tables — Avoid per-frame allocations in drawMenu()
 Texture atlas — Pack all icons into a single atlas to reduce texture switches
 Frame pacing — Ensure consistent 60 FPS; profile with love.timer
 Memory management — Unload unused icons if the menu becomes large (lazy loading)
-5. Gamepad & Controller Support
-Full love.gamepad integration — Xbox controller layout (A/B/X/Y, D-pad, thumbsticks)
+5. Gamepad & Controller Support — ⬜ NOT STARTED
+Full love.joystick integration — Xbox controller layout (A/B/X/Y, D-pad, thumbsticks)
 Controller detection — Show a "Controller Connected" indicator
 Remappable buttons — Allow users to customize button bindings in Settings
 Vibration feedback — Add rumble on selection/error if supported
@@ -377,10 +353,10 @@ Background variants — Let users choose radar grid, noise field, nebula, or sol
 Theme editor — Let users create custom themes with color pickers
 Plugin system — Allow users to add custom menu items or background effects via Lua scripts
 Recommended Build Order
-Config persistence (theme, resolution) — Quick win, high impact
-Shortcut manager — Core of "customizable" goal
-Gamepad support — Completes the Xbox feel
-Performance pass — Pre-bake static graphics, batch draws
-Sound design — Adds polish and feedback
-Standalone builds + licensing — Ready for itch.io
-Feature expansion (search, favorites, theme editor) — Differentiators
+Config persistence (theme, resolution) — ✅ DONE
+Shortcut manager + App Launcher — ✅ DONE (core of the "customizable" goal)
+Gamepad support — ⬜ Completes the Xbox feel
+Performance pass — ⬜ Pre-bake static graphics, batch draws
+Sound design — ⬜ Adds polish and feedback
+Standalone builds + licensing — ⬜ Ready for itch.io
+Feature expansion (search, favorites, theme editor) — ⬜ Differentiators

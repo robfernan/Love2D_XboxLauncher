@@ -4,9 +4,11 @@
 -- paths call into here so they can never drift out of sync.
 -- ============================================================================
 
-local State  = require("core.state")
-local Menu   = require("core.menu_data")
+local State    = require("core.state")
+local Menu     = require("core.menu_data")
 local Settings = require("core.settings")
+local Shortcuts = require("core.shortcuts")
+local Launcher = require("core.launcher")
 
 local M = {}
 
@@ -21,9 +23,8 @@ function M.activeItems()
     end
     return out
   end
-  local cat = Menu.findCategory(State.currentMenuLevel)
-  if cat and cat.items then return cat.items end
-  return {}
+  -- User shortcuts are merged in after the built-ins of their category.
+  return Shortcuts.mergedItems(State.currentMenuLevel)
 end
 
 -------------------------------------------------------------------------------
@@ -72,8 +73,15 @@ function M.activateItem(idx)
     Settings.applyWindowMode(Settings.winModeIndex + 1)
   elseif action == "CYCLE_SCALE" then
     Settings.cycleScale(1)
-  elseif item.url then
-    love.system.openURL(item.url)
+  elseif action == "ADD_SHORTCUT" then
+    -- Open the add-shortcut wizard (see core/wizard).
+    local Wizard = require("core.wizard")
+    Wizard.open()
+  elseif item.action == "REMOVE_SHORTCUT" or item.shortcutId then
+    Shortcuts.remove(item.shortcutId)
+  else
+    -- Launchable shortcut: url in browser, cmd as a detached process.
+    Launcher.launch(item)
   end
 end
 

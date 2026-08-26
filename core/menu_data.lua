@@ -1,12 +1,14 @@
 -- ============================================================================
 -- MENU DATA
--- The built-in category/item tree. User shortcuts (future Shortcut Manager)
--- will be merged into this structure at load time.
+-- The built-in category/item tree. User shortcuts (managed by core/shortcuts)
+-- are merged into this structure at load time and persisted to config.json.
 --
 -- Each item may have:
 --   name    — display label (Settings items carry live-updated names)
 --   url     — opened via love.system.openURL when activated
---   action  — one of CYCLE_THEME / CYCLE_RES / TOGGLE_FS / CYCLE_WINMODE / CYCLE_SCALE
+--   cmd     — local program path, launched detached (see core/launcher)
+--   action  — one of CYCLE_THEME / CYCLE_RES / TOGGLE_FS / CYCLE_WINMODE /
+--             CYCLE_SCALE / ADD_SHORTCUT / REMOVE_SHORTCUT
 --   icon    — optional path to a PNG in icons/ (loaded into State.iconCache)
 -- ============================================================================
 
@@ -36,6 +38,7 @@ M.categories = {
     { name = "Fullscreen: Off",      action = "TOGGLE_FS",     icon = "icons/video_icon.png" },
     { name = "Window: Borderless",   action = "CYCLE_WINMODE", icon = "icons/internet_icon.png" },
     { name = "UI Scale: 100%",       action = "CYCLE_SCALE",   icon = "icons/tool_icon.png" },
+    { name = "+ Add Shortcut...",    action = "ADD_SHORTCUT",  icon = "icons/profile_icon.png" },
   }},
 }
 
