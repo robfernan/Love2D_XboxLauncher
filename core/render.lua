@@ -107,8 +107,8 @@ function M.drawMenu()
   local w, h = love.graphics.getDimensions()
   local S = Layout.scale()
   local cx, cy = w * 0.44, h * 0.5
-  local itemW, itemH = 290 * S, 48 * S
-  local spacing = 12 * S
+  -- Uniform sizing (must match Layout.menuItemRect exactly).
+  local itemW, itemH, spacing = 290 * S, 48 * S, 12 * S
   local theme = Themes.current()
   local themeR, themeG, themeB = theme.color[1], theme.color[2], theme.color[3]
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]

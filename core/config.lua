@@ -20,6 +20,7 @@ local M = {}
 local DEFAULTS = {
   theme = { index = 4 },                 -- active color theme (1..N)
   uiScale = 1.0,                         -- global UI scale factor (0.75 .. 2.0)
+  setup = { done = false },              -- first-run wizard completed? (see core/setup)
   window = {
     width = 1280,
     height = 720,

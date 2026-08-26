@@ -15,9 +15,15 @@ local M = {}
 M.REF_W, M.REF_H = 1280, 720
 
 -- Current responsive scale factor (window-relative * user uiScale).
+-- UNIFORM scaling: one factor derived from the SMALLER axis ratio, applied to
+-- everything. This guarantees identical proportions at any resolution — no
+-- stretching, no overflow — and the user's uiScale multiplies on top for
+-- accessibility. The layout is centered, so letterboxing on non-16:9 windows
+-- is expected and correct (same look as 1280x720, just larger/smaller).
 function M.scale()
   local w, h = love.graphics.getDimensions()
   local base = math.min(w / M.REF_W, h / M.REF_H)
+  if base < 0.5 then base = 0.5 end   -- floor so UI never shrinks below usable
   local user = Config.get("uiScale")
   if type(user) ~= "number" then user = 1.0 end
   return base * user
@@ -26,6 +32,8 @@ end
 -- Menu item geometry (must match render.drawMenu).
 -- `itemCount` is the number of items at the current level; pass it in so this
 -- function stays pure and doesn't need to know about menu state.
+-- Uniform sizing: every dimension scales by S, so proportions are identical at
+-- any resolution. The list is vertically centered around cy.
 function M.menuItemRect(idx, itemCount)
   local w, h = love.graphics.getDimensions()
   local S = M.scale()
