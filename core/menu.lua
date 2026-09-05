@@ -9,6 +9,7 @@ local Menu     = require("core.menu_data")
 local Settings = require("core.settings")
 local Shortcuts = require("core.shortcuts")
 local Launcher = require("core.launcher")
+local Layout   = require("core.layout")
 
 local M = {}
 
@@ -77,7 +78,8 @@ function M.activateItem(idx)
     -- Open the add-shortcut wizard (see core/wizard).
     local Wizard = require("core.wizard")
     Wizard.open()
-  elseif item.action == "REMOVE_SHORTCUT" or item.shortcutId then
+  elseif action == "REMOVE_SHORTCUT" and item.shortcutId then
+    -- Explicit remove affordance (e.g. X key on a user shortcut).
     Shortcuts.remove(item.shortcutId)
   else
     -- Launchable shortcut: url in browser, cmd as a detached process.
@@ -100,15 +102,21 @@ end
 -------------------------------------------------------------------------------
 -- Keyboard navigation (up/down). Clears hover so keyboard takes over.
 -------------------------------------------------------------------------------
+-- Wrap-around navigation (Xbox-style): moving past either edge wraps to the
+-- other side instead of clamping.
+local function wrapIndex(idx, delta, count)
+  return ((idx - 1 + delta) % count + 1)
+end
+
 function M.moveSelection(delta)
   local items = M.activeItems()
   local maxItems = #items
   if maxItems == 0 then return end
   State.hoverIndex = 0
   if State.currentMenuLevel == "MAIN" then
-    State.selected = math.max(1, math.min(maxItems, State.selected + delta))
+    State.selected = wrapIndex(State.selected, delta, maxItems)
   else
-    State.subSelected = math.max(1, math.min(maxItems, State.subSelected + delta))
+    State.subSelected = wrapIndex(State.subSelected, delta, maxItems)
   end
 end
 
@@ -143,7 +151,7 @@ function M.updateHover(mx, my)
   local count = #items
   local found = 0
   for i = 1, count do
-    local ix, iy, iw, ih = require("core.layout").menuItemRect(i, count)
+    local ix, iy, iw, ih = Layout.menuItemRect(i, count)
     if mx >= ix and mx <= ix + iw and my >= iy and my <= iy + ih then
       found = i
       break
@@ -157,7 +165,6 @@ end
 -- Priority: B-badge > A-badge > menu item under cursor.
 -------------------------------------------------------------------------------
 function M.handleClick(mx, my)
-  local Layout = require("core.layout")
   local hints = Layout.hintButtons()
   if Layout.pointInCircle(mx, my, hints.back) then
     M.goBack()

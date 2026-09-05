@@ -106,11 +106,15 @@ function M.load()
   end)
 
   if ok and type(text) == "string" and #text > 0 then
-    local decoded = json.decode(text)
+    local decOk, decoded = pcall(json.decode, text)
+    if not decOk then
+      print("[config] decode error: " .. tostring(decoded))
+    end
     if type(decoded) == "table" then
       deepMerge(data, decoded)   -- user values override defaults
     else
-      print("[config] config.json present but invalid; using defaults.")
+      print("[config] config.json present but invalid; using defaults. (text len=" .. #text .. ")")
+      print("[config] first 120 chars: " .. text:sub(1,120))
     end
   end
 

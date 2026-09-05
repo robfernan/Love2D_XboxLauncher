@@ -149,15 +149,12 @@ function M.keypressed(key)
     return true
   end
 
-  -- A toggles free-text entry on Name / Target.
-  if key == "a" and (field.key == "name" or field.key == "target") then
-    M.editingText = not M.editingText
-    return true
-  end
+  local isTextField = (field.key == "name" or field.key == "target")
 
   -- While editing text, printable keys append to the active string field.
-  if M.editingText and (field.key == "name" or field.key == "target") then
-    local isPrintable = key:match("[%a%d%._/%\\:%-]") ~= nil
+  -- Checked BEFORE the 'a' toggle so that typing 'a' works while in edit mode.
+  if M.editingText and isTextField then
+    local isPrintable = key:match("[%a%d%._/%\\:%- ]") ~= nil
     if isPrintable then
       M.form[field.key] = M.form[field.key] .. key
       return true
@@ -165,6 +162,12 @@ function M.keypressed(key)
       M.form[field.key] = M.form[field.key]:sub(1, -2)
       return true
     end
+  end
+
+  -- A toggles free-text entry on Name / Target (only when NOT already editing).
+  if key == "a" and isTextField and not M.editingText then
+    M.editingText = true
+    return true
   end
 
   return false

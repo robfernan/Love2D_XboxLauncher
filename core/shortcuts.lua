@@ -157,7 +157,11 @@ function M.move(id, delta)
   while j >= 1 and j <= #list do
     if list[j].category == target.category then
       table.remove(list, idx)
-      table.insert(list, j > idx and (j - 1) or j, target)
+      -- After removing at `idx`, every index above it shifts down by one. The
+      -- neighbor we want to swap with is now at (j - 1) when moving down and
+      -- still at j when moving up. Inserting at that spot performs the swap.
+      local insertAt = (delta > 0) and (j - 1) or j
+      table.insert(list, insertAt, target)
       saveList(list)
       -- Report new position within the category.
       local pos = 0

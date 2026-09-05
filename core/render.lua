@@ -156,7 +156,7 @@ function M.drawMenu()
       cx + 4*S, y + 2*S, cx + itemW - 26*S, y + 2*S,
       cx + itemW - 10*S, y + 6*S, cx + 4*S, y + 6*S)
 
-    -- Icon (if available in cache)
+    -- Icon (lazy-load on first use so user shortcuts display too)
     local textOffsetX = 45 * S
     if item.icon and State.iconCache[item.icon] then
       local iconImg = State.iconCache[item.icon]
@@ -165,6 +165,17 @@ function M.drawMenu()
       love.graphics.setColor(1, 1, 1, isSelected and 1.0 or 0.8)
       love.graphics.draw(iconImg, cx + 12*S, y + (itemH * 0.5) - (ih * scale * 0.5), 0, scale, scale)
       textOffsetX = 52 * S
+    elseif item.icon then
+      -- Try lazy-loading an icon not yet in cache (user shortcuts).
+      local ok, img = pcall(love.graphics.newImage, item.icon)
+      if ok and img then
+        State.iconCache[item.icon] = img
+        local iw, ih = img:getDimensions()
+        local scale = (30 * S) / math.max(iw, ih)
+        love.graphics.setColor(1, 1, 1, isSelected and 1.0 or 0.8)
+        love.graphics.draw(img, cx + 12*S, y + (itemH * 0.5) - (ih * scale * 0.5), 0, scale, scale)
+        textOffsetX = 52 * S
+      end
     end
 
     -- Label

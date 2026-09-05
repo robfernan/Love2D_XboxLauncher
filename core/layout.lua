@@ -45,7 +45,7 @@ end
 
 -- Title-bar button rects (must match render.drawTitleBar).
 function M.titleBarButtons()
-  local w = love.graphics.getWidth()
+  local w, h = love.graphics.getDimensions()
   local S = M.scale()
   local barH = 32 * S
   local btnSize = 20 * S

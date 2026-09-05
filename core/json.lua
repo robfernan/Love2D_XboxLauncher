@@ -107,10 +107,12 @@ local function skipWhitespace(s, i)
   return i
 end
 
--- NOTE: The parser functions below are defined as chunk-level (global within this
--- file) so that mutual recursion works. Do NOT add a `local` forward-declaration
--- line here — doing so creates local upvalues that the bare `function name()`
--- definitions do not assign to, leaving them nil and breaking array/object parsing.
+-- NOTE: The parser functions below are all LOCAL (forward-declared then
+-- assigned) so mutual recursion works without polluting the global namespace.
+-- `local f; function f() ... end` assigns to the local — this is safe and
+-- preferred over bare chunk-level `function name()` which creates true globals.
+local parseString, parseNumber, parseArray, parseObject, parseValue
+
 local function errorAt(msg, s, i)
   local line = 1
   local col = 1
@@ -120,7 +122,7 @@ local function errorAt(msg, s, i)
   error('JSON parse error at line ' .. line .. ', col ' .. col .. ': ' .. msg, 0)
 end
 
-function parseString(s, i)
+parseString = function(s, i)
   -- i points at opening quote
   if s:sub(i, i) ~= '"' then errorAt('expected string', s, i) end
   i = i + 1
@@ -173,11 +175,19 @@ function parseString(s, i)
   errorAt('unterminated string', s, i)
 end
 
-function parseNumber(s, i)
+parseNumber = function(s, i)
   local start = i
   local n = #s
+  -- Optional leading sign.
   if s:sub(i, i) == '-' then i = i + 1 end
-  while i <= n and s:match('^[%d%.eE+-]', s:sub(i, i)) do
+  -- Consume a valid number character set. Use an explicit alternation rather
+  -- than a bracket class ending in '-': `[%d%.eE+-]` is parsed by Lua as the
+  -- range '+'..'~' (matching ':' and more), which over-consumed and broke parsing.
+  local okChar = function(c)
+    return c:match('%d') ~= nil or c == '.' or c == 'e' or c == 'E'
+         or c == '+' or c == '-'
+  end
+  while i <= n and okChar(s:sub(i, i)) do
     i = i + 1
   end
   local numStr = s:sub(start, i - 1)
@@ -186,7 +196,7 @@ function parseNumber(s, i)
   return num, i
 end
 
-function parseArray(s, i)
+parseArray = function(s, i)
   if s:sub(i, i) ~= '[' then errorAt('expected [', s, i) end
   i = i + 1
   local arr = {}
@@ -209,7 +219,7 @@ function parseArray(s, i)
   end
 end
 
-function parseObject(s, i)
+parseObject = function(s, i)
   if s:sub(i, i) ~= '{' then errorAt('expected {', s, i) end
   i = i + 1
   local obj = {}
@@ -237,7 +247,7 @@ function parseObject(s, i)
   end
 end
 
-function parseValue(s, i)
+parseValue = function(s, i)
   i = skipWhitespace(s, i)
   local c = s:sub(i, i)
   if c == '"' then
@@ -269,6 +279,7 @@ function json.decode(str)
     return val
   end)
   if not ok then
+    print("[json] decode error: " .. tostring(result))
     return nil
   end
   return result

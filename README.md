@@ -122,3 +122,5 @@ See [goals.md](goals.md) for the full feature roadmap. Completed so far: **Confi
 ## License
 
 This project is provided as a prototype for personal and educational use. See [goals.md](goals.md) for distribution and monetization plans (targeting itch.io / Steam as a free or paid utility).
+
+Love2d 11.5 version theres no version after

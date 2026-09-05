@@ -72,13 +72,30 @@ end
 -- Asset initialization (fonts, canvases, shader, icons).
 -------------------------------------------------------------------------------
 
-local function makeFont(size)
+-- Fonts are created at a base pixel size (designed for the 1280x720 reference).
+-- They are scaled to match Layout.scale() so text stays proportional to all UI
+-- geometry at any resolution. Rebuilt whenever scale changes (resize / uiScale).
+local FONT_BASE = { big = 20, small = 14, tiny = 10 }
+local lastFontScale = nil
+
+local function makeFont(baseSize)
   -- Bundled arial.ttf; fall back to the default font if it is missing.
   local ok, f = pcall(function()
-    return love.graphics.newFont("arial.ttf", size)
+    return love.graphics.newFont("arial.ttf", baseSize)
   end)
   if ok and f then return f end
-  return love.graphics.newFont(size)
+  return love.graphics.newFont(baseSize)
+end
+
+-- Rebuild all fonts at the current Layout.scale(). Cheap enough to call on any
+-- resize/scale change; keeps text crisp and proportional.
+local function rebuildFonts()
+  local S = Layout.scale()
+  if lastFontScale == S then return end
+  lastFontScale = S
+  State.bigFont   = makeFont(math.max(1, math.floor(FONT_BASE.big * S)))
+  State.smallFont = makeFont(math.max(1, math.floor(FONT_BASE.small * S)))
+  State.tinyFont  = makeFont(math.max(1, math.floor(FONT_BASE.tiny * S)))
 end
 
 local function makeCanvases(w, h)
@@ -88,17 +105,25 @@ local function makeCanvases(w, h)
   State.bloomB       = love.graphics.newCanvas(w, h)
 end
 
+-- Load a single icon path into the cache (lazy). Returns the Image or nil.
+local function loadIcon(path)
+  if not path then return nil end
+  local cached = State.iconCache[path]
+  if cached then return cached end
+  local ok, img = pcall(love.graphics.newImage, path)
+  if ok and img then
+    State.iconCache[path] = img
+    return img
+  end
+  return nil
+end
+
 local function loadIcons()
   local MenuData = require("core.menu_data")
   for _, category in ipairs(MenuData.categories) do
     if category.items then
       for _, item in ipairs(category.items) do
-        if item.icon and not State.iconCache[item.icon] then
-          local ok, img = pcall(love.graphics.newImage, item.icon)
-          if ok then
-            State.iconCache[item.icon] = img
-          end
-        end
+        loadIcon(item.icon)
       end
     end
   end
@@ -144,10 +169,8 @@ function love.load()
     if shaderOk then State.blurShader = shader end
   end
 
-  -- Fonts (bundled arial.ttf with safe fallback).
-  State.bigFont   = makeFont(20)
-  State.smallFont = makeFont(14)
-  State.tinyFont  = makeFont(10)
+  -- Fonts (bundled arial.ttf with safe fallback), scaled to current layout.
+  rebuildFonts()
 
   -- Render canvases + icon cache.
   local w, h = love.graphics.getDimensions()
@@ -157,14 +180,17 @@ end
 
 function love.resize(w, h)
   makeCanvases(w, h)
+  rebuildFonts()   -- keep text proportional after a resolution change
 end
 
 function love.update(dt)
   State.timeacc     = State.timeacc + dt
   State.menuPulse   = State.menuPulse + dt
 
-  -- Smooth the selection orb toward the active index.
-  local target = (State.currentMenuLevel == "MAIN") and State.selected or State.subSelected
+  -- Smooth the selection orb toward the active index. Uses Menu.activeIndex()
+  -- so the orb follows BOTH keyboard and mouse hover identically.
+  local target = Menu.activeIndex()
+  if type(target) ~= "number" then target = 1 end
   State.selectionAnim = State.selectionAnim + (target - State.selectionAnim) * math.min(1, dt * 10)
 
   -- Window dragging: follow the cursor, clamped to desktop bounds.
@@ -212,15 +238,21 @@ function love.mousepressed(x, y, button)
       return
     end
 
-    -- Remember press origin; we decide click-vs-drag on release.
-    State.pressX, State.pressY = x, y
-    State.isDragging = true
-    State.dragX, State.dragY = x, y
+    -- Only the title bar initiates a window drag. Clicking anywhere else is a
+    -- pure click (no accidental window moves from a small cursor slip).
+    if y <= btns.barH then
+      State.pressX, State.pressY = x, y
+      State.isDragging = true
+      State.dragX, State.dragY = x, y
+    end
   end
 end
 
 function love.mousereleased(x, y, button)
-  if button == 1 and State.isDragging then
+  if button ~= 1 then return end
+
+  if State.isDragging then
+    -- Press started in the title bar: decide click-vs-drag on release.
     State.isDragging = false
     local dx, dy = math.abs(x - State.pressX), math.abs(y - State.pressY)
     if dx > State.DRAG_THRESHOLD or dy > State.DRAG_THRESHOLD then
@@ -229,11 +261,14 @@ function love.mousereleased(x, y, button)
       Config.set("window.x", math.floor(wx))
       Config.set("window.y", math.floor(wy))
     else
-      -- It was a click (barely moved). Priority order:
-      --   1) the bottom-left B / A hint badges (act as real buttons),
-      --   2) any menu item under the cursor.
-      Menu.handleClick(x, y)
+      -- Barely moved — treat as a click on the title bar (no-op; buttons are
+      -- handled in mousepressed). Ignore so we don't double-activate.
     end
+  else
+    -- Press started outside the title bar: it's a pure menu click. Priority:
+    --   1) the bottom-left B / A hint badges (act as real buttons),
+    --   2) any menu item under the cursor.
+    Menu.handleClick(x, y)
   end
 end
 
@@ -248,6 +283,15 @@ function love.keypressed(key)
     return
   end
 
+  -- Ignore modifier-key combos (Ctrl/Alt/Shift + letter) so they don't trigger
+  -- menu actions. Plain letters still work as expected.
+  local ctrlDown = love.keyboard.isDown("lctrl", "rctrl")
+  local altDown = love.keyboard.isDown("lalt", "ralt")
+  local guiDown = love.keyboard.isDown("lgui", "rgui")
+  if ctrlDown or altDown or guiDown then
+    return
+  end
+
   if key == "down" then
     Menu.moveSelection(1)
   elseif key == "up" then
@@ -258,6 +302,14 @@ function love.keypressed(key)
   -- A / Enter activates the currently highlighted item.
   elseif key == "a" or key == "return" or key == "kpenter" then
     Menu.activateItem(Menu.activeIndex())
+  -- X removes a user shortcut (only works on items that have a shortcutId).
+  elseif key == "x" then
+    local items = Menu.activeItems()
+    local idx = Menu.activeIndex()
+    local item = items and items[idx]
+    if item and item.shortcutId then
+      require("core.shortcuts").remove(item.shortcutId)
+    end
   -- B / Escape only go BACK one level. At MAIN they do nothing — the app can
   -- ONLY be quit via the title-bar X button (per design).
   elseif key == "b" or key == "escape" then
@@ -272,3 +324,4 @@ function love.quit()
   Config.set("window.y", math.floor(wy))
   Config.save()
 end
+

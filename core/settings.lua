@@ -97,6 +97,13 @@ end
 
 -- Sync internal indices to saved config values (called once in love.load).
 function M.syncFromConfig()
+  -- Restore the active theme from config so it persists across restarts.
+  local Themes = require("core.themes")
+  local savedTheme = Config.get("theme.index")
+  if type(savedTheme) == "number" and savedTheme >= 1 and savedTheme <= Themes.count() then
+    State.activeTheme = savedTheme
+  end
+
   local winW = Config.get("window.width") or 1280
   local winH = Config.get("window.height") or 720
   for i, p in ipairs(M.resPresets) do
@@ -135,3 +142,4 @@ function M.syncFromConfig()
 end
 
 return M
+
