@@ -17,6 +17,7 @@
 local State     = require("core.state")
 local Shortcuts = require("core.shortcuts")
 local Layout    = require("core.layout")
+local Keyboard  = require("core.keyboard")
 
 local M = {}
 
@@ -134,6 +135,11 @@ end
 function M.keypressed(key)
   if not M.open_ then return false end
 
+  -- If virtual keyboard is open, it has first priority
+  if Keyboard.isOpen() then
+    return Keyboard.keypressed(key)
+  end
+
   -- Cancel.
   if key == "b" or key == "escape" then
     M.close()
@@ -190,12 +196,22 @@ function M.keypressed(key)
     end
   end
 
-  -- A toggles free-text entry on Name / Target (only when NOT already editing).
-  if key == "a" and isTextField and not M.editingText then
-    M.editingText = true
+  -- A opens the console virtual keyboard for Name / Target
+  if key == "a" and isTextField then
+    Keyboard.open(M.form[field.key], function(newText)
+      M.form[field.key] = newText
+    end)
     return true
   end
 
+  return false
+end
+
+function M.gamepadpressed(button)
+  if not M.open_ then return false end
+  if Keyboard.isOpen() then
+    return Keyboard.gamepadpressed(button)
+  end
   return false
 end
 
@@ -277,6 +293,11 @@ function M.render()
   love.graphics.setColor(0.7, 0.7, 0.8, 0.9)
   local hints = "A: edit/cycle   Enter: create   B/Esc: cancel"
   love.graphics.print(hints, px + (panelW - smallFont:getWidth(hints)) / 2, hintY)
+
+  -- Draw virtual on-screen keyboard if active
+  if Keyboard.isOpen() then
+    Keyboard.draw(w, h)
+  end
 end
 
 return M

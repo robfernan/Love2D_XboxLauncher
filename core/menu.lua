@@ -44,6 +44,9 @@ end
 -------------------------------------------------------------------------------
 function M.activeIndex()
   if State.hoverIndex > 0 then return State.hoverIndex end
+  if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+    return State.subSelected
+  end
   if State.currentMenuLevel == "MAIN" then
     return State.selected
   else
@@ -107,6 +110,11 @@ end
 -- only be quit via the title-bar X button.
 -------------------------------------------------------------------------------
 function M.goBack()
+  if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+    Audio.play("back")
+    return
+  end
+
   if State.currentMenuLevel ~= "MAIN" then
     Audio.play("back")
     State.currentMenuLevel = "MAIN"
@@ -133,7 +141,9 @@ function M.moveSelection(delta)
   if maxItems == 0 then return end
   Audio.play("tick")
   State.hoverIndex = 0
-  if State.currentMenuLevel == "MAIN" then
+  if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+    State.subSelected = wrapIndex(State.subSelected, delta, maxItems)
+  elseif State.currentMenuLevel == "MAIN" then
     State.selected = wrapIndex(State.selected, delta, maxItems)
   else
     State.subSelected = wrapIndex(State.subSelected, delta, maxItems)
@@ -197,6 +207,10 @@ end
 -- Update hover index based on mouse position (called from love.mousemoved).
 -------------------------------------------------------------------------------
 function M.updateHover(mx, my)
+  if State.activeLayout ~= "XBOX" then
+    State.hoverIndex = 0
+    return
+  end
   local items = M.activeItems()
   local count = #items
   local found = 0
@@ -212,7 +226,7 @@ end
 
 -------------------------------------------------------------------------------
 -- Handle a click at (mx,my). Returns true if the click was consumed.
--- Priority: B-badge > A-badge > menu item under cursor.
+-- Priority: B-badge > A-badge > layout-specific click.
 -------------------------------------------------------------------------------
 function M.handleClick(mx, my)
   local hints = Layout.hintButtons()
@@ -225,6 +239,25 @@ function M.handleClick(mx, my)
     return true
   end
 
+  -- In BLADES (NXE) layout:
+  if State.activeLayout == "BLADES" then
+    local LayoutBlades = require("core.layouts.blades")
+    if LayoutBlades.handleClick and LayoutBlades.handleClick(mx, my) then
+      return true
+    end
+    return false
+  end
+
+  -- In XMB layout:
+  if State.activeLayout == "XMB" then
+    local LayoutXMB = require("core.layouts.xmb")
+    if LayoutXMB.handleClick and LayoutXMB.handleClick(mx, my) then
+      return true
+    end
+    return false
+  end
+
+  -- In XBOX Original layout:
   local items = M.activeItems()
   local count = #items
   for i = 1, count do

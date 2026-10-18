@@ -305,9 +305,20 @@ function M.drawTitleBar(w, h)
   love.graphics.line(0, barH, w, barH)
 
   -- Left: System Logo & Title
+  local logoSize = 10 * S
+  local logoX = 18 * S
+  local logoY = barH / 2
+  love.graphics.setColor(glowR, glowG, glowB, 0.95)
+  love.graphics.polygon("fill",
+    logoX, logoY - logoSize * 0.6,
+    logoX + logoSize * 0.6, logoY,
+    logoX, logoY + logoSize * 0.6,
+    logoX - logoSize * 0.6, logoY
+  )
+
   love.graphics.setFont(State.smallFont)
   love.graphics.setColor(glowR, glowG, glowB, 0.95)
-  love.graphics.print("◈  XBOX CONCEPT DASHBOARD", 16 * S, (barH - State.smallFont:getHeight()) / 2)
+  love.graphics.print("XBOX CONCEPT DASHBOARD", logoX + logoSize + 8 * S, (barH - State.smallFont:getHeight()) / 2)
 
   -- Center: Sleek Live Digital Clock
   local timeStr = os.date("%I:%M %p")
@@ -315,11 +326,30 @@ function M.drawTitleBar(w, h)
   love.graphics.print(timeStr, (w - State.smallFont:getWidth(timeStr)) / 2, (barH - State.smallFont:getHeight()) / 2)
 
   -- Buttons (top-right)
-  local btnSize = 22 * S
-  local btnPad = 8 * S
-  local closeX = w - btnPad - btnSize
-  local minBtnX = closeX - btnSize - 6 * S
-  local btnY0 = (barH - btnSize) / 2
+  local btns = Layout.titleBarButtons()
+  local closeX = btns.close.x
+  local minBtnX = btns.minimize.x
+  local btnSize = btns.close.w
+  local btnY0 = btns.close.y
+
+  -- Interactive Layout Switcher Badge
+  local Settings = require("core.settings")
+  local curLayName = Settings.layoutNames[State.activeLayout] or State.activeLayout
+  local layBtn = btns.layout
+  love.graphics.setColor(0.12, 0.16, 0.22, 0.85)
+  love.graphics.rectangle("fill", layBtn.x, layBtn.y, layBtn.w, layBtn.h, 4 * S, 4 * S)
+  love.graphics.setColor(glowR, glowG, glowB, 0.45)
+  love.graphics.setLineWidth(1 * S)
+  love.graphics.rectangle("line", layBtn.x, layBtn.y, layBtn.w, layBtn.h, 4 * S, 4 * S)
+  local fontToUse = State.tinyFont or State.smallFont
+  love.graphics.setFont(fontToUse)
+  love.graphics.setColor(0.9, 0.95, 1.0, 0.9)
+  local badgeTxt = "Layout: " .. curLayName
+  if fontToUse:getWidth(badgeTxt) > layBtn.w - 8 * S then
+    badgeTxt = curLayName
+  end
+  local btw = fontToUse:getWidth(badgeTxt)
+  love.graphics.print(badgeTxt, layBtn.x + (layBtn.w - btw) / 2, layBtn.y + (layBtn.h - fontToUse:getHeight()) / 2)
 
   -- Minimize button
   love.graphics.setColor(0.12, 0.12, 0.18, 0.8)
@@ -329,14 +359,19 @@ function M.drawTitleBar(w, h)
   love.graphics.setColor(1, 1, 1, 0.85)
   love.graphics.rectangle("fill", minBtnX + (btnSize - 10*S)/2, barH/2 - 1*S, 10*S, 2*S)
 
-  -- Close button
-  love.graphics.setColor(0.7, 0.15, 0.22, 0.8)
+  -- Close button (drawn with crisp vector diagonal lines for real 'X')
+  love.graphics.setColor(0.75, 0.15, 0.22, 0.85)
   love.graphics.rectangle("fill", closeX, btnY0, btnSize, btnSize, 4 * S, 4 * S)
-  love.graphics.setColor(1, 0.3, 0.3, 0.5)
+  love.graphics.setColor(1, 0.35, 0.35, 0.6)
   love.graphics.rectangle("line", closeX, btnY0, btnSize, btnSize, 4 * S, 4 * S)
+  
+  local cx0 = closeX + btnSize / 2
+  local cy0 = btnY0 + btnSize / 2
+  local arm = 4.2 * S
+  love.graphics.setLineWidth(1.8 * S)
   love.graphics.setColor(1, 1, 1, 0.95)
-  local xLabel = "✕"
-  love.graphics.print(xLabel, closeX + (btnSize - State.smallFont:getWidth(xLabel))/2, btnY0 + (btnSize - State.smallFont:getHeight())/2)
+  love.graphics.line(cx0 - arm, cy0 - arm, cx0 + arm, cy0 + arm)
+  love.graphics.line(cx0 - arm, cy0 + arm, cx0 + arm, cy0 - arm)
 end
 
 -------------------------------------------------------------------------------
@@ -344,6 +379,51 @@ end
 -------------------------------------------------------------------------------
 function M.drawHints(w, h)
   local S = Layout.scale()
+
+  -- Authentic Xbox 360 NXE style hints when in NXE layout
+  if State.activeLayout == "BLADES" then
+    local startX = 72 * S
+    local btnY = h - 30 * S
+    local hintR = 10 * S
+    love.graphics.setFont(State.smallFont)
+
+    -- (A) Select
+    love.graphics.setColor(0.35, 0.75, 0.15, 1.0)
+    love.graphics.circle("fill", startX + hintR, btnY, hintR)
+    love.graphics.setColor(0, 0, 0, 1)
+    love.graphics.print("A", startX + hintR - State.smallFont:getWidth("A")/2, btnY - State.smallFont:getHeight()/2)
+    love.graphics.setColor(0.9, 0.95, 1.0, 0.9)
+    love.graphics.print("Select", startX + hintR*2 + 6*S, btnY - State.smallFont:getHeight()/2)
+
+    -- (X) Launch / Action
+    local xPos = startX + 105 * S
+    love.graphics.setColor(0.15, 0.55, 0.95, 1.0)
+    love.graphics.circle("fill", xPos + hintR, btnY, hintR)
+    love.graphics.setColor(0, 0, 0, 1)
+    love.graphics.print("X", xPos + hintR - State.smallFont:getWidth("X")/2, btnY - State.smallFont:getHeight()/2)
+    love.graphics.setColor(0.9, 0.95, 1.0, 0.9)
+    love.graphics.print("Launch", xPos + hintR*2 + 6*S, btnY - State.smallFont:getHeight()/2)
+
+    -- (Y) Game Details / Edit
+    local yPos = xPos + 115 * S
+    love.graphics.setColor(0.95, 0.80, 0.10, 1.0)
+    love.graphics.circle("fill", yPos + hintR, btnY, hintR)
+    love.graphics.setColor(0, 0, 0, 1)
+    love.graphics.print("Y", yPos + hintR - State.smallFont:getWidth("Y")/2, btnY - State.smallFont:getHeight()/2)
+    love.graphics.setColor(0.9, 0.95, 1.0, 0.9)
+    love.graphics.print("Game Details", yPos + hintR*2 + 6*S, btnY - State.smallFont:getHeight()/2)
+
+    -- [F6] Switch Layout
+    local layoutPos = yPos + 140 * S
+    love.graphics.setColor(0.15, 0.18, 0.24, 0.85)
+    local lText = "[F6] Layout"
+    local lw = State.smallFont:getWidth(lText) + 12 * S
+    love.graphics.rectangle("fill", layoutPos, btnY - 10 * S, lw, 20 * S, 4 * S, 4 * S)
+    love.graphics.setColor(0.85, 0.92, 1.0, 0.85)
+    love.graphics.print(lText, layoutPos + 6 * S, btnY - State.smallFont:getHeight() / 2)
+    return
+  end
+
   local theme = Themes.current()
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]
 

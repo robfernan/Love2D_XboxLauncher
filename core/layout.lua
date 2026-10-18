@@ -47,15 +47,22 @@ end
 function M.titleBarButtons()
   local w, h = love.graphics.getDimensions()
   local S = M.scale()
-  local barH = 32 * S
-  local btnSize = 20 * S
-  local btnPad = 6 * S
+  local barH = 34 * S
+  local btnSize = 22 * S
+  local btnPad = 8 * S
   local closeX = w - btnPad - btnSize
-  local minBtnX = closeX - btnSize - 8 * S
+  local minBtnX = closeX - btnSize - 6 * S
   local btnY0 = (barH - btnSize) / 2
+
+  local layW = 140 * S
+  local layX = minBtnX - layW - 12 * S
+  local layH = 22 * S
+  local layY = (barH - layH) / 2
+
   return {
     close    = { x = closeX,   y = btnY0, w = btnSize, h = btnSize },
     minimize = { x = minBtnX,  y = btnY0, w = btnSize, h = btnSize },
+    layout   = { x = layX,     y = layY,  w = layW,    h = layH },
     barH     = barH,
   }
 end

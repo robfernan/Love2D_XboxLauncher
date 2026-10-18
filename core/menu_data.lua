@@ -36,7 +36,6 @@ M.categories = {
     { name = "Layout: Xbox Original",action = "CYCLE_LAYOUT",  icon = "icons/theme_icon.png" },
     { name = "Theme: Purple",        action = "CYCLE_THEME",   icon = "icons/theme_icon.png" },
     { name = "Resolution: 1280x720", action = "CYCLE_RES",     icon = "icons/settings_icon.png" },
-    { name = "Fullscreen: Off",      action = "TOGGLE_FS",     icon = "icons/video_icon.png" },
     { name = "Window: Borderless",   action = "CYCLE_WINMODE", icon = "icons/internet_icon.png" },
     { name = "UI Scale: 100%",       action = "CYCLE_SCALE",   icon = "icons/tool_icon.png" },
     { name = "+ Add Shortcut...",    action = "ADD_SHORTCUT",  icon = "icons/profile_icon.png" },

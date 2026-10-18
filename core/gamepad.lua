@@ -83,8 +83,19 @@ end
 function M.gamepadpressed(joystick, button)
   M.detectControllerType(joystick)
 
+  -- Search overlay has first priority
+  local Search = require("core.search")
+  if Search.isOpen() then
+    if Search.gamepadpressed(button) then
+      return
+    end
+  end
+
   -- 1) Wizard has priority if open
   if Wizard.isOpen() then
+    if Wizard.gamepadpressed and Wizard.gamepadpressed(button) then
+      return
+    end
     if button == "dpup" then
       Wizard.keypressed("up")
     elseif button == "dpdown" then
@@ -111,11 +122,25 @@ function M.gamepadpressed(joystick, button)
 
   -- 2) Dashboard navigation
   if button == "dpdown" then
-    Menu.moveSelection(1)
+    if State.activeLayout == "BLADES" then
+      M.cycleCategory(1)
+    else
+      Menu.moveSelection(1)
+    end
   elseif button == "dpup" then
-    Menu.moveSelection(-1)
+    if State.activeLayout == "BLADES" then
+      M.cycleCategory(-1)
+    else
+      Menu.moveSelection(-1)
+    end
   elseif button == "dpleft" then
-    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+    if State.activeLayout == "BLADES" then
+      if State.currentMenuLevel == "SETTINGS" then
+        Menu.cycleSettingsOption(-1)
+      else
+        Menu.moveSelection(-1)
+      end
+    elseif State.activeLayout == "XMB" then
       M.cycleCategory(-1)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(-1)
@@ -123,7 +148,13 @@ function M.gamepadpressed(joystick, button)
       M.cycleCategory(-1)
     end
   elseif button == "dpright" then
-    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+    if State.activeLayout == "BLADES" then
+      if State.currentMenuLevel == "SETTINGS" then
+        Menu.cycleSettingsOption(1)
+      else
+        Menu.moveSelection(1)
+      end
+    elseif State.activeLayout == "XMB" then
       M.cycleCategory(1)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(1)
@@ -149,7 +180,7 @@ function M.gamepadpressed(joystick, button)
     if item and item.shortcutId then
       Shortcuts.remove(item.shortcutId)
     end
-  -- Y (Triangle on PlayStation) = Edit custom shortcut
+  -- Y (Triangle on PlayStation) = Edit custom shortcut OR open Quick Search
   elseif button == "y" then
     local items = Menu.activeItems()
     local idx = Menu.activeIndex()
@@ -162,7 +193,14 @@ function M.gamepadpressed(joystick, button)
           break
         end
       end
+    else
+      local Search = require("core.search")
+      Search.open()
     end
+  -- Back / Select button directly cycles dashboard layout
+  elseif button == "back" then
+    local Settings = require("core.settings")
+    Settings.cycleLayout(1)
   end
 end
 
@@ -199,6 +237,8 @@ function M.update(dt)
       if moveY ~= 0 then
         if Wizard.isOpen() then
           Wizard.keypressed(moveY > 0 and "down" or "up")
+        elseif State.activeLayout == "BLADES" then
+          M.cycleCategory(moveY)
         else
           Menu.moveSelection(moveY)
         end
@@ -207,6 +247,12 @@ function M.update(dt)
       if moveX ~= 0 then
         if Wizard.isOpen() then
           Wizard.keypressed(moveX > 0 and "right" or "left")
+        elseif State.activeLayout == "BLADES" then
+          if State.currentMenuLevel == "SETTINGS" then
+            Menu.cycleSettingsOption(moveX)
+          else
+            Menu.moveSelection(moveX)
+          end
         elseif State.currentMenuLevel == "SETTINGS" then
           Menu.cycleSettingsOption(moveX)
         else

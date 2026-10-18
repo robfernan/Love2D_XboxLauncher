@@ -20,11 +20,10 @@ M.resPresets = {
 }
 M.resIndex = 1
 
--- Window mode cycle: borderless -> windowed(resizable) -> fullscreen(desktop).
+-- Window mode cycle: Borderless (default) -> Windowed (resizable).
 M.winModes = {
   { name = "Borderless", borderless = true,  resizable = false, fullscreen = false },
   { name = "Windowed",   borderless = false, resizable = true,  fullscreen = false },
-  { name = "Fullscreen", borderless = true,  resizable = false, fullscreen = true  },
 }
 M.winModeIndex = 1
 
@@ -61,7 +60,7 @@ M.layoutList = { "XBOX", "XMB", "BLADES" }
 M.layoutNames = {
   XBOX   = "Xbox Original",
   XMB    = "PlayStation XMB",
-  BLADES = "Xbox 360 Blades",
+  BLADES = "Xbox 360 (NXE)",
 }
 
 function M.cycleLayout(delta)
@@ -72,6 +71,14 @@ function M.cycleLayout(delta)
   local nextIdx = ((curIdx - 1 + delta) % #M.layoutList) + 1
   State.activeLayout = M.layoutList[nextIdx]
 
+  -- If returning to Xbox Original, reset to clean MAIN level
+  if State.activeLayout == "XBOX" then
+    State.currentMenuLevel = "MAIN"
+    State.selected = 1
+    State.subSelected = 1
+    State.selectionAnim = 1
+  end
+
   Config.set("layout", State.activeLayout)
   setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (M.layoutNames[State.activeLayout] or State.activeLayout))
 end
@@ -81,11 +88,11 @@ function M.applyWindowMode(idx)
   local m = M.winModes[M.winModeIndex]
   Config.set("window.borderless", m.borderless)
   Config.set("window.resizable", m.resizable)
-  Config.set("window.fullscreen", m.fullscreen)
+  Config.set("window.fullscreen", false)
   love.window.setMode(
     Config.get("window.width") or 1280,
     Config.get("window.height") or 720,
-    { borderless = m.borderless, resizable = m.resizable, fullscreen = m.fullscreen, vsync = true }
+    { borderless = m.borderless, resizable = m.resizable, fullscreen = false, vsync = true }
   )
   setSettingsLabel("CYCLE_WINMODE", "Window: " .. m.name)
 end
@@ -100,11 +107,8 @@ function M.cycleResolution(delta)
 end
 
 function M.toggleFullscreen()
-  local isFs = Config.get("window.fullscreen")
-  if type(isFs) ~= "boolean" then isFs = false end
-  M.applyWindowMode(isFs and 1 or 3)   -- off -> Borderless(1), on -> Fullscreen(3)
-  local nowOn = (Config.get("window.fullscreen") == true)
-  setSettingsLabel("TOGGLE_FS", nowOn and "Fullscreen: On" or "Fullscreen: Off")
+  -- Borderless window is the primary intended design
+  M.applyWindowMode(M.winModeIndex + 1)
 end
 
 function M.cycleScale(delta)
@@ -129,17 +133,9 @@ function M.syncFromConfig()
     if p.w == winW and p.h == winH then M.resIndex = i break end
   end
 
-  local borderless = Config.get("window.borderless")
-  local fullscreen = Config.get("window.fullscreen")
-  if type(borderless) ~= "boolean" then borderless = true end
-  if type(fullscreen) ~= "boolean" then fullscreen = false end
-  if fullscreen then
-    M.winModeIndex = 3
-  elseif borderless then
-    M.winModeIndex = 1
-  else
-    M.winModeIndex = 2
-  end
+  Config.set("window.fullscreen", false)
+  Config.set("window.borderless", true)
+  M.winModeIndex = 1
 
   local savedScale = Config.get("uiScale")
   if type(savedScale) == "number" then

@@ -1,47 +1,77 @@
 # Xbox Concept Dashboard (Love2D)
 
-A retro-futuristic, Xbox-inspired **desktop launcher** built with **Love2D** (LÖVE). It features a custom frameless draggable window, a procedural glowing sphere wrapped in intersecting orbital wireframe rings, a multi-pass bloom shader, a radar grid background, hierarchical category menus with app icons, live color theme switching — and a real **Shortcut Manager + App Launcher** so you can add your own apps/websites and launch them straight from the dashboard.
-
-![Xbox Concept Dashboard — Screenshot](Screenshot_6_07PM_8_24_2026.png)
+A retro-futuristic, multi-era console desktop launcher and game manager built with **Love2D 11.5**. Experience authentic console dashboard layouts—including the **Xbox Original Sci-Fi Dashboard**, the **Xbox 360 NXE (New Xbox Experience)**, and the **PlayStation 3 / PSP XMB (XrossMediaBar)**—with dynamic procedural backgrounds, sound effects, full controller support, a virtual on-screen keyboard, instant search, and real application launching.
 
 ---
 
-## Features
+## Multiple Console Layout Engines
 
-* **Procedural Glowing Sphere & Orbital Rings** — A central planet body drawn with radial gradient layers, wrapped by intersecting rotating wireframe rings, and enhanced with a two-pass (separable) Gaussian blur bloom shader.
-* **Radar Grid Background** — Concentric radar rings and crosshair spokes rendered on a dedicated canvas, tinted to the active theme.
-* **Hierarchical Menu System** — Two-tier navigation: four top-level categories (**Games**, **Browse**, **Media**, **Settings**), each with icon sub-items.
-* **Shortcut Manager (custom apps)** — Add your own shortcuts via the in-app wizard (`Settings → + Add Shortcut…`). Each shortcut is a local app path *or* a website, filed under Games/Browse/Media, and persisted to `config.json`. Remove or reorder them any time.
-* **App Launcher** — Launches real programs, not just URLs: `.exe`/`.bat` paths are spawned detached (Windows `start`, macOS `open`, Linux `setsid`) so they keep running after the launcher exits; websites open in your default browser. This is what bridges the gap between a Wallpaper Engine-style dashboard and a package manager.
-* **Dynamic Color Themes** — Four built-in profiles (**Green**, **Blue**, **Red**, **Purple**); cycle with **Left/Right** inside Settings or select the *Theme* item. Theme changes apply live across background, sphere, rings, menu, and title bar.
-* **Configurable Window System** — Resolution presets (720p→1440p), Borderless / Windowed / Fullscreen modes, UI scale (75–150%), all persisted and applied live.
-* **Draggable Frameless Window** — Custom title bar with working minimize (–) and close (×); click-and-drag repositioning clamped to screen bounds; position remembered between sessions.
-* **Graceful Degradation** — Missing icon files are skipped silently (`pcall` loading), so the launcher still runs without the `icons/` folder.
+Switch seamlessly between dashboard eras at any time via **F6**, the controller **Back / Select** button, or the top title bar badge:
+
+* **Xbox 360 NXE (New Xbox Experience, 2008–2010)**
+  * Iconic twilight snowy mountain backdrop with shaded mountain facets, pine ridges, crescent moon, and twinkling stars.
+  * Real-time reflective frozen icy lake floor mirroring the cards and item counters.
+  * Animated concentric water ripple rings emanating from a 3D chrome Xbox Guide button orb.
+  * Horizontal 3D perspective card carousel ("The Channel") with glossy active black/green card and lime-green trailing perspective cards.
+  * Top-right Gamertag profile HUD with vector mail/friend notifications and Gamerpic tile.
+  * Centered category column navigating your actual categories: **`GAMES`**, **`BROWSE`**, **`MEDIA`**, and **`SETTINGS`**.
+
+* **Xbox Original Dashboard**
+  * Procedural glowing planet sphere with radial gradients and rotating intersecting orbital wireframe rings.
+  * Multi-pass separable Gaussian blur bloom shader pipeline.
+  * Dynamic radar sweep grid background with sci-fi telemetry readouts.
+  * 3D trapezoidal chevron menu buttons with live selection orb connector lines.
+
+* **PlayStation 3 / PSP XMB (XrossMediaBar)**
+  * GLSL-powered procedural ribbon wave shader background with glowing energy lines.
+  * Horizontal icon category bar with vertical scrolling sub-item columns.
+  * PlayStation controller glyphs (Cross, Circle, Square, Triangle).
+
+---
+
+## Core Features
+
+* **Real Application & Game Launcher**: Spawns local `.exe` and `.bat` programs detached (Windows `start`, macOS `open`, Linux `setsid`) so they keep running after the launcher exits. Also opens web apps and URLs in your default browser.
+* **Steam Game Auto-Detection**: Pure Lua cross-platform scanner parses `libraryfolders.vdf` and `.acf` manifests to automatically import installed Steam games into your **GAMES** category.
+* **Drag-and-Drop Shortcut Creation**: Drag any `.exe`, folder, file, or image directly into the launcher window to add it immediately.
+* **Shortcut Manager & Wizard (`Settings → + Add Shortcut…` / `Y` button)**: Create, edit, and organize shortcuts with custom names, categories, and icons. All items persist cleanly to `userdata/config.json`.
+* **Quick Search Overlay (`Ctrl + F` or Gamepad `Y`)**: Instant fuzzy search across your entire game and application catalog.
+* **Virtual On-Screen Keyboard (OSK)**: Full console virtual keyboard with controller navigation, mouse clicks, and shortcuts (`A` type, `X` backspace, `Y` space, `Start` confirm).
+* **Full Gamepad / Controller Support**: Native XInput / DirectInput support with analog stick navigation, deadzones, trigger handling, and dynamic prompt badge rendering (Xbox `A/B/X/Y` vs. PlayStation `✕/○/□/△`).
+* **Custom Frameless Window**: Clean borderless window with draggable title bar, vector close (`✕`) and minimize (`–`) buttons, live digital clock, and layout switcher badge.
+* **Live Audio Synthesis**: Procedurally synthesized retro UI sound effects (blip, tick, swoosh, cancel, launch) without relying on external `.wav` files.
+* **Dynamic Color Themes & Scaling**: Multiple color profiles (**Green**, **Blue**, **Red**, **Purple**), resolution presets (720p→1440p), and UI scaling (75%–150%) with crisp proportional font scaling.
 
 ---
 
 ## Controls
 
-| Key / Action | Description |
-| :--- | :--- |
-| **Up / Down** | Navigate menu items up and down |
-| **A / Enter / Keypad Enter** | Select item, open category, or launch app/URL |
-| **B / Escape** | Go back one level (at the main menu it does nothing — only × quits) |
-| **Left / Right** | Cycle the highlighted Settings option (theme/resolution/window/scale) |
-| **Mouse Drag** | Click and drag to move the window |
-| **Mouse Click (top-right)** | Minimize (–) or close (×) the window |
-
-### Add-Shortcut Wizard
-
-Open with `Settings → + Add Shortcut…` (or click it). While the wizard is open:
+### Keyboard & Mouse
 
 | Key / Action | Description |
 | :--- | :--- |
-| **Up / Down** | Move between fields (Name, Type, Target, Category) |
-| **Left / Right** | Cycle *Type* (App/Website) and *Category* (Games/Browse/Media) |
-| **A** | Toggle free-text entry on the *Name* / *Target* field, then type |
-| **Enter** | Create the shortcut and return to the menu |
-| **B / Escape** | Cancel |
+| **Up / Down** | Navigate vertical menu items (or categories in NXE) |
+| **Left / Right** | Navigate categories (or horizontal 3D card carousel in NXE) |
+| **A / Enter / Space** | Select / activate item, open category, or launch app |
+| **B / Escape** | Go back one level (at the root menu, app remains open) |
+| **X** | Remove selected custom shortcut |
+| **Y / E** | Edit highlighted shortcut |
+| **F6** | Quick cycle layout (Xbox Original ↔ Xbox 360 NXE ↔ PS3 XMB) |
+| **Ctrl + F** | Open Quick Search overlay |
+| **Title Bar Drag** | Click and drag the top title bar to move the window |
+| **Title Bar Buttons** | Minimize (`–`), close (`✕`), or click `[Layout: ...]` badge to switch layouts |
+
+### Gamepad / Controller
+
+| Button | Action |
+| :--- | :--- |
+| **D-Pad / Left Stick** | Navigate items, cards, and categories |
+| **A / Cross (✕)** | Select / Launch |
+| **B / Circle (○)** | Back / Cancel |
+| **X / Square (□)** | Remove shortcut |
+| **Y / Triangle (△)** | Quick Search (or edit shortcut in menu) |
+| **LB / RB (L1 / R1)** | Fast category switching |
+| **Back / Select / View** | Cycle layout engine |
 
 ---
 
@@ -49,78 +79,54 @@ Open with `Settings → + Add Shortcut…` (or click it). While the wizard is op
 
 ```
 Xbox_Launcher/
-├── conf.lua      — LÖVE window/config bootstrap
-├── main.lua      — Thin LÖVE bootstrap: wires love.* callbacks to core/ modules
-├── core/         — All application logic (modular)
-│   ├── config.lua     — persistent settings (userdata/config.json)
-│   ├── state.lua      — shared runtime state (single source of truth)
-│   ├── themes.lua     — color theme profiles
-│   ├── menu_data.lua  — built-in category/item tree + icons
-│   ├── shortcuts.lua  — Shortcut Manager: add/remove/reorder user apps
-│   ├── launcher.lua   — App Launcher: spawn local programs / open URLs
-│   ├── wizard.lua     — in-app "Add Shortcut" form
-│   ├── settings.lua   — resolution / window-mode / scale actions
-│   ├── layout.lua     — responsive geometry + hit-test helpers
-│   ├── menu.lua       — navigation state machine (keyboard & mouse paths)
-│   ├── render.lua     — all drawing: radar bg, planet, bloom, title bar, menu
-│   └── json.lua       — dependency-free JSON encoder/decoder
-├── icons/        — App/platform icons loaded by the menu
-├── shaders/      — .glsl shaders (bloom blur, orbital rings)
-├── arial.ttf     — Font asset
-└── Screenshot_6_07PM_8_24_2026.png — Hero screenshot
+├── conf.lua             — LÖVE window/config bootstrap
+├── main.lua             — Application entrypoint & love.* event routing
+├── core/                — Modular core subsystems
+│   ├── config.lua       — Persistent configuration loader (userdata/config.json)
+│   ├── state.lua        — Shared runtime state & font/canvas cache
+│   ├── themes.lua       — Color theme palettes
+│   ├── menu_data.lua    — Category tree definition (GAMES, BROWSE, MEDIA, SETTINGS)
+│   ├── shortcuts.lua    — Shortcut storage and category merging
+│   ├── launcher.lua     — Detached process execution & URL launcher
+│   ├── steam.lua        — Cross-platform Steam library scanner
+│   ├── wizard.lua       — Shortcut creation & edit modal
+│   ├── keyboard.lua     — Console On-Screen Virtual Keyboard (OSK)
+│   ├── search.lua       — Instant fuzzy search overlay
+│   ├── gamepad.lua      — Controller input mapping & prompt badges
+│   ├── audio.lua        — Procedural retro sound synthesis
+│   ├── settings.lua     — Window mode, resolution, and theme settings
+│   ├── layout.lua       — Responsive UI scaling & hit-test helpers
+│   ├── menu.lua         — Menu navigation state machine
+│   ├── render.lua       — Title bar, bloom pipeline, and frame coordination
+│   ├── json.lua         — Dependency-free pure Lua JSON library
+│   └── layouts/         — Dashboard Layout Engines
+│       ├── xbox.lua     — Xbox Original Sci-Fi Dashboard
+│       ├── blades.lua   — Xbox 360 NXE 3D Channel Carousel Dashboard
+│       └── xmb.lua      — PlayStation 3 / PSP XMB Dashboard
+├── icons/               — App and platform icons
+├── shaders/             — GLSL shaders (bloom blur, XMB ribbon wave)
+├── rajdhani.ttf         — Primary dashboard font
+└── .vscode/tasks.json   — Build task to run via Ctrl+Shift+B
 ```
 
 ---
 
-## Requirements
+## Requirements & Running
 
-* **LÖVE (Love2D) 11.x** — tested against 11.5 (the current stable release). Download from [love2d.org](https://love2d.org/).
-* **OS:** Windows, macOS, or Linux (LÖVE is cross-platform; the App Launcher uses each OS's native spawn mechanism).
-* No external dependencies or packages required — pure LÖVE + built-in graphics/shaders.
+* **LÖVE (Love2D) 11.5** ([love2d.org](https://love2d.org/))
+* **OS:** Windows, macOS, or Linux
 
----
+### How to Run
 
-## How to Run
-
-1. Install [LÖVE 11.5](https://love2d.org/download/).
-2. Run the project from the project root:
-
+1. Clone or open this repository in VS Code.
+2. Launch using **`Ctrl + Shift + B`** in VS Code (runs default build task), or run from terminal:
    ```bash
    love .
    ```
-
-   Or double-click a packaged `.love` archive, or open the folder in LÖVE's app launcher.
-
-3. Navigate with the keyboard or mouse, and click the top bar to drag the window.
-
-> **Note:** The menu icons in `icons/` are loaded by name. Any missing icon is skipped silently — the launcher works fine without them. Your custom shortcuts and settings persist in `userdata/config.json`.
-
----
-
-## Building a Distributable
-
-To package as a single `.love` file for distribution:
-
-```bash
-love pack .
-```
-
-This produces a portable `Xbox_Launcher.love` that runs on any OS with LÖVE installed — ideal for the planned [itch.io](https://itch.io/) release.
-
----
-
-## Roadmap
-
-See [goals.md](goals.md) for the full feature roadmap. Completed so far: **Config System**, **Shortcut Manager**, **App Launcher**, **Wizard UI**, **Settings Expansion** (resolution/fullscreen/scale), and the **Module Refactor**. Next up:
-
-* **Gamepad Support** — full `love.joystick` binding (Xbox layout) for a true couch/console feel.
-* **Icon Picker / Auto-extract** — browse for a PNG or auto-extract an icon from a `.exe`.
-* **Performance** — batch the static radar background to a single texture, pre-bake bloom passes, and reduce per-frame canvas clears.
+3. Custom shortcuts, window settings, and layout preferences are automatically saved to `userdata/config.json`.
 
 ---
 
 ## License
 
-This project is provided as a prototype for personal and educational use. See [goals.md](goals.md) for distribution and monetization plans (targeting itch.io / Steam as a free or paid utility).
-
-Love2d 11.5 version theres no version after
+This project is open-source and intended for personal, hobbyist, and custom launcher use.

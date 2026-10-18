@@ -25,6 +25,7 @@ local Render   = require("core.render")
 local Wizard   = require("core.wizard")
 local Gamepad  = require("core.gamepad")
 local HotReload = require("core.hotreload")
+local Search   = require("core.search")
 
 -------------------------------------------------------------------------------
 -- Window geometry helpers (LÖVE 11/12 compatible).
@@ -147,17 +148,16 @@ function love.load()
 
   local winW = Config.get("window.width") or 1280
   local winH = Config.get("window.height") or 720
-  local borderless = Config.get("window.borderless")
-  if type(borderless) ~= "boolean" then borderless = true end
   local resizable = Config.get("window.resizable")
   if type(resizable) ~= "boolean" then resizable = false end
-  local fullscreen = Config.get("window.fullscreen")
-  if type(fullscreen) ~= "boolean" then fullscreen = false end
+
+  Config.set("window.fullscreen", false)
+  Config.set("window.borderless", true)
 
   love.window.setTitle("Xbox Concept Dashboard")
   love.window.setMode(winW, winH, {
-    resizable = resizable, borderless = borderless,
-    fullscreen = fullscreen, vsync = true,
+    resizable = resizable, borderless = true,
+    fullscreen = false, vsync = true,
   })
 
   -- Restore last window position if we have one.
@@ -239,6 +239,11 @@ function love.draw()
   if Wizard.isOpen() then
     Wizard.render()
   end
+  -- Quick search overlay (drawn on top when open).
+  if Search.isOpen() then
+    local w, h = love.graphics.getDimensions()
+    Search.draw(w, h)
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -254,6 +259,12 @@ end
 
 function love.mousepressed(x, y, button)
   State.mouseX, State.mouseY = x, y
+
+  local Keyboard = require("core.keyboard")
+  if Keyboard.isOpen() and Keyboard.mousepressed(x, y, button) then
+    return
+  end
+
   if button == 1 then
     local btns = Layout.titleBarButtons()
     -- Close (top-right X) — the ONLY way to quit the app.
@@ -266,6 +277,11 @@ function love.mousepressed(x, y, button)
     if Layout.pointInRect(x, y, btns.minimize) then
       Config.save()
       love.window.minimize()
+      return
+    end
+    -- Layout Switcher Button
+    if btns.layout and Layout.pointInRect(x, y, btns.layout) then
+      Settings.cycleLayout(1)
       return
     end
 
@@ -314,29 +330,61 @@ function love.keypressed(key)
     return
   end
 
+  -- Search overlay has priority if open
+  if Search.isOpen() and Search.keypressed(key) then
+    return
+  end
+
   -- While the add-shortcut wizard is open, it owns all keyboard input.
   if Wizard.isOpen() and Wizard.keypressed(key) then
     return
   end
 
-  -- Ignore modifier-key combos (Ctrl/Alt/Shift + letter) so they don't trigger
-  -- menu actions. Plain letters still work as expected.
   local ctrlDown = love.keyboard.isDown("lctrl", "rctrl")
   local altDown = love.keyboard.isDown("lalt", "ralt")
   local guiDown = love.keyboard.isDown("lgui", "rgui")
+
+  -- Ctrl+F: Open Quick Search overlay
+  if ctrlDown and key == "f" then
+    Search.open()
+    return
+  end
+
+  -- F6: Instant Layout switcher
+  if key == "f6" then
+    Settings.cycleLayout(1)
+    return
+  end
+
+  -- Ignore modifier-key combos (Ctrl/Alt/Shift + letter) so they don't trigger
+  -- menu actions. Plain letters still work as expected.
   if ctrlDown or altDown or guiDown then
     return
   end
 
   if key == "down" then
-    Menu.moveSelection(1)
+    if State.activeLayout == "BLADES" then
+      Menu.cycleCategory(1)
+    else
+      Menu.moveSelection(1)
+    end
   elseif key == "up" then
-    Menu.moveSelection(-1)
+    if State.activeLayout == "BLADES" then
+      Menu.cycleCategory(-1)
+    else
+      Menu.moveSelection(-1)
+    end
   -- Left/Right navigation
   elseif key == "left" or key == "right" then
     local delta = (key == "right") and 1 or -1
-    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
-      -- In XMB and Blades, Left/Right navigates the category blades/tabs
+    if State.activeLayout == "BLADES" then
+      if State.currentMenuLevel == "SETTINGS" then
+        Menu.cycleSettingsOption(delta)
+      else
+        Menu.moveSelection(delta)
+      end
+    elseif State.activeLayout == "XMB" then
+      -- In XMB, Left/Right navigates the category tabs
       Menu.cycleCategory(delta)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(delta)

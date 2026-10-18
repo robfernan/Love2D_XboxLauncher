@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Xbox Launcher",
+      "type": "shell",
+      "command": "C:\\Love2D\\love-11.5-win64\\love.exe",
+      "args": ["."],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
