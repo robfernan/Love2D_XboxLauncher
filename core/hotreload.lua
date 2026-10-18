@@ -152,7 +152,7 @@ end
 -- Keypress handler for manual reload (F5)
 -------------------------------------------------------------------------------
 function M.keypressed(key)
-  if key == "f5" then
+  if key == "f5" or (key == "r" and love.keyboard.isDown("lctrl", "rctrl")) then
     M.reloadAll()
     return true
   end
