@@ -23,6 +23,8 @@ local Menu     = require("core.menu")
 local Layout   = require("core.layout")
 local Render   = require("core.render")
 local Wizard   = require("core.wizard")
+local Gamepad  = require("core.gamepad")
+local HotReload = require("core.hotreload")
 
 -------------------------------------------------------------------------------
 -- Window geometry helpers (LÖVE 11/12 compatible).
@@ -79,11 +81,16 @@ local FONT_BASE = { big = 20, small = 14, tiny = 10 }
 local lastFontScale = nil
 
 local function makeFont(baseSize)
-  -- Bundled arial.ttf; fall back to the default font if it is missing.
+  -- Bundled rajdhani.ttf (Google Open Font License); fallback to arial.ttf or default
   local ok, f = pcall(function()
-    return love.graphics.newFont("arial.ttf", baseSize)
+    return love.graphics.newFont("rajdhani.ttf", baseSize)
   end)
   if ok and f then return f end
+
+  local ok2, f2 = pcall(function()
+    return love.graphics.newFont("arial.ttf", baseSize)
+  end)
+  if ok2 and f2 then return f2 end
   return love.graphics.newFont(baseSize)
 end
 
@@ -172,6 +179,13 @@ function love.load()
   -- Fonts (bundled arial.ttf with safe fallback), scaled to current layout.
   rebuildFonts()
 
+  -- Procedural sound effects initialization (cross-platform, zero asset files required)
+  local Audio = require("core.audio")
+  Audio.init()
+
+  -- Live hot reloader (auto-recompiles scripts and shaders on save)
+  HotReload.init()
+
   -- Render canvases + icon cache.
   local w, h = love.graphics.getDimensions()
   makeCanvases(w, h)
@@ -192,6 +206,12 @@ function love.update(dt)
   local target = Menu.activeIndex()
   if type(target) ~= "number" then target = 1 end
   State.selectionAnim = State.selectionAnim + (target - State.selectionAnim) * math.min(1, dt * 10)
+
+  -- Gamepad analog stick updates
+  Gamepad.update(dt)
+
+  -- Check file changes for live hot reload
+  HotReload.update(dt)
 
   -- Window dragging: follow the cursor, clamped to desktop bounds.
   if State.isDragging then
@@ -278,6 +298,11 @@ end
 -------------------------------------------------------------------------------
 
 function love.keypressed(key)
+  -- F5 Manual Hot Reload
+  if HotReload.keypressed(key) then
+    return
+  end
+
   -- While the add-shortcut wizard is open, it owns all keyboard input.
   if Wizard.isOpen() and Wizard.keypressed(key) then
     return
@@ -310,11 +335,54 @@ function love.keypressed(key)
     if item and item.shortcutId then
       require("core.shortcuts").remove(item.shortcutId)
     end
+  -- Y or E edits a user shortcut
+  elseif key == "y" or key == "e" then
+    local items = Menu.activeItems()
+    local idx = Menu.activeIndex()
+    local item = items and items[idx]
+    if item and item.shortcutId then
+      local allShortcuts = require("core.shortcuts").all()
+      for _, s in ipairs(allShortcuts) do
+        if s.id == item.shortcutId then
+          Wizard.openForEdit(s)
+          break
+        end
+      end
+    end
   -- B / Escape only go BACK one level. At MAIN they do nothing — the app can
   -- ONLY be quit via the title-bar X button (per design).
   elseif key == "b" or key == "escape" then
     Menu.goBack()
   end
+end
+
+-------------------------------------------------------------------------------
+-- DRAG AND DROP: Drop an executable, file, or image directly into the launcher!
+-------------------------------------------------------------------------------
+function love.filedropped(file)
+  local path = file:getFilename()
+  if not path or #path == 0 then return end
+
+  -- Clean path slashes
+  path = path:gsub("\\", "/")
+  local filename = path:match("([^/]+)$") or path
+  local name = filename:gsub("%.%w+$", "") -- strip extension for clean name
+
+  local isImage = path:match("%.png$") or path:match("%.jpg$") or path:match("%.jpeg$")
+  local currentCat = State.currentMenuLevel
+  if currentCat == "MAIN" or currentCat == "SETTINGS" then
+    currentCat = "GAMES"
+  end
+
+  Wizard.open()
+  Wizard.form.name = name
+  Wizard.form.category = currentCat
+  Wizard.form.type = "App"
+  Wizard.form.target = path
+end
+
+function love.gamepadpressed(joystick, button)
+  Gamepad.gamepadpressed(joystick, button)
 end
 
 -- Guarantee settings are written on every exit path (title-bar X, OS close).

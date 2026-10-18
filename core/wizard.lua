@@ -45,11 +45,29 @@ M.editingText = false     -- true while typing into Name/Target via keyboard
 -------------------------------------------------------------------------------
 function M.open()
   M.open_ = true
+  M.editingId = nil
   M.form = {
     name     = "My App",
     type     = TYPE_VALUES[1],
     target   = "",        -- e.g. C:\Games\game.exe or https://example.com
     category = CATEGORY_VALUES[1],
+  }
+  M.fieldIndex = 1
+  M.editingText = false
+end
+
+-------------------------------------------------------------------------------
+-- Open the wizard in edit mode for an existing shortcut.
+-------------------------------------------------------------------------------
+function M.openForEdit(shortcut)
+  if not shortcut then return end
+  M.open_ = true
+  M.editingId = shortcut.id
+  M.form = {
+    name     = shortcut.name or "App",
+    type     = shortcut.url and "Website" or "App",
+    target   = shortcut.url or shortcut.cmd or "",
+    category = shortcut.category or CATEGORY_VALUES[1],
   }
   M.fieldIndex = 1
   M.editingText = false
@@ -94,12 +112,20 @@ function M.confirm()
   }
   if f.type == "Website" then
     spec.url = f.target
+    spec.cmd = nil
   else
     spec.cmd = f.target
+    spec.url = nil
   end
-  local created = Shortcuts.add(spec)
+
+  local result = nil
+  if M.editingId then
+    result = Shortcuts.update(M.editingId, spec)
+  else
+    result = Shortcuts.add(spec)
+  end
   M.close()
-  return created ~= nil
+  return result ~= nil
 end
 
 -------------------------------------------------------------------------------
@@ -209,7 +235,7 @@ function M.render()
   local font = State.bigFont or love.graphics.newFont(20)
   love.graphics.setFont(font)
   love.graphics.setColor(glowR, glowG, glowB, 1)
-  local title = "ADD SHORTCUT"
+  local title = M.editingId and "EDIT SHORTCUT" or "ADD SHORTCUT"
   love.graphics.print(title, px + (panelW - font:getWidth(title)) / 2, py + 14 * S)
 
   -- Fields.

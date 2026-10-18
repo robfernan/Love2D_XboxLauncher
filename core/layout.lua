@@ -37,8 +37,8 @@ end
 function M.menuItemRect(idx, itemCount)
   local w, h = love.graphics.getDimensions()
   local S = M.scale()
-  local cx, cy = w * 0.44, h * 0.5
-  local itemW, itemH, spacing = 290 * S, 48 * S, 12 * S
+  local cx, cy = w * 0.43, h * 0.5
+  local itemW, itemH, spacing = 320 * S, 48 * S, 12 * S
   local y = cy - (itemCount * (itemH + spacing)) / 2 + (idx - 1) * (itemH + spacing)
   return cx, y, itemW, itemH
 end

@@ -10,6 +10,7 @@ local Settings = require("core.settings")
 local Shortcuts = require("core.shortcuts")
 local Launcher = require("core.launcher")
 local Layout   = require("core.layout")
+local Audio    = require("core.audio")
 
 local M = {}
 
@@ -53,6 +54,7 @@ function M.activateItem(idx)
   if State.currentMenuLevel == "MAIN" then
     local cat = Menu.categories[idx]
     if cat then
+      Audio.play("swoosh")
       State.currentMenuLevel = cat.id
       State.subSelected = 1
       State.selected = idx
@@ -61,6 +63,8 @@ function M.activateItem(idx)
     end
     return
   end
+
+  Audio.play("select")
 
   -- Sub-menu: run the item's action.
   local action = item.action
@@ -93,9 +97,13 @@ end
 -------------------------------------------------------------------------------
 function M.goBack()
   if State.currentMenuLevel ~= "MAIN" then
+    Audio.play("back")
     State.currentMenuLevel = "MAIN"
     State.hoverIndex = 0
     State.selectionAnim = State.selected
+    -- Re-evaluate hover under current cursor position so it doesn't glitch
+    local mx, my = love.mouse.getPosition()
+    M.updateHover(mx, my)
   end
 end
 
@@ -112,6 +120,7 @@ function M.moveSelection(delta)
   local items = M.activeItems()
   local maxItems = #items
   if maxItems == 0 then return end
+  Audio.play("tick")
   State.hoverIndex = 0
   if State.currentMenuLevel == "MAIN" then
     State.selected = wrapIndex(State.selected, delta, maxItems)
@@ -130,6 +139,7 @@ function M.cycleSettingsOption(delta)
   local item = items[idx]
   if not item or not item.action then return end
 
+  Audio.play("tick")
   if item.action == "CYCLE_THEME" then
     Settings.cycleTheme(delta)
   elseif item.action == "CYCLE_RES" then
@@ -180,6 +190,12 @@ function M.handleClick(mx, my)
   for i = 1, count do
     local ix, iy, iw, ih = Layout.menuItemRect(i, count)
     if mx >= ix and mx <= ix + iw and my >= iy and my <= iy + ih then
+      if State.currentMenuLevel == "MAIN" then
+        State.selected = i
+      else
+        State.subSelected = i
+      end
+      State.hoverIndex = i
       M.activateItem(i)
       return true
     end

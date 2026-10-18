@@ -139,6 +139,25 @@ function M.remove(id)
 end
 
 -------------------------------------------------------------------------------
+-- Update an existing shortcut in-place.
+-------------------------------------------------------------------------------
+function M.update(id, spec)
+  local list = loadList()
+  for _, s in ipairs(list) do
+    if s.id == id then
+      if spec.name then s.name = spec.name end
+      if spec.category then s.category = spec.category end
+      if spec.url ~= nil then s.url = spec.url end
+      if spec.cmd ~= nil then s.cmd = spec.cmd end
+      if spec.icon ~= nil then s.icon = spec.icon end
+      saveList(list)
+      return true
+    end
+  end
+  return false
+end
+
+-------------------------------------------------------------------------------
 -- Move a shortcut up/down within its category. `delta` = +1 (down) / -1 (up).
 -- Returns the new position (1-based within the category) or nil if no-op.
 -------------------------------------------------------------------------------
