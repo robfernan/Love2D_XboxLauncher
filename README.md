@@ -8,24 +8,34 @@ A retro-futuristic, multi-era console desktop launcher and game manager built wi
 
 Switch seamlessly between dashboard eras at any time via **F6**, the controller **Back / Select** button, or the top title bar badge:
 
-* **Xbox 360 NXE (New Xbox Experience, 2008–2010)**
-  * Iconic twilight snowy mountain backdrop with shaded mountain facets, pine ridges, crescent moon, and twinkling stars.
-  * Real-time reflective frozen icy lake floor mirroring the cards and item counters.
-  * Animated concentric water ripple rings emanating from a 3D chrome Xbox Guide button orb.
-  * Horizontal 3D perspective card carousel ("The Channel") with glossy active black/green card and lime-green trailing perspective cards.
-  * Top-right Gamertag profile HUD with vector mail/friend notifications and Gamerpic tile.
-  * Centered category column navigating your actual categories: **`GAMES`**, **`BROWSE`**, **`MEDIA`**, and **`SETTINGS`**.
+### 1. Xbox 360 NXE (New Xbox Experience, 2008–2010)
+![Xbox 360 NXE Layout](Screenshot%202026-10-17%20220017.png)
 
-* **Xbox Original Dashboard**
-  * Procedural glowing planet sphere with radial gradients and rotating intersecting orbital wireframe rings.
-  * Multi-pass separable Gaussian blur bloom shader pipeline.
-  * Dynamic radar sweep grid background with sci-fi telemetry readouts.
-  * 3D trapezoidal chevron menu buttons with live selection orb connector lines.
+* Iconic twilight snowy mountain backdrop with shaded mountain facets, pine ridges, crescent moon, and twinkling stars.
+* Real-time reflective frozen icy lake floor mirroring the cards and item counters.
+* Animated concentric water ripple rings emanating from a 3D chrome Xbox Guide button orb.
+* Horizontal 3D perspective card carousel ("The Channel") with glossy active card and lime-green trailing perspective cards.
+* Top-right Gamertag profile HUD with vector mail/friend notifications and Gamerpic tile.
+* Centered category column navigating your actual categories: **`GAMES`**, **`BROWSE`**, **`MEDIA`**, and **`SETTINGS`**.
 
-* **PlayStation 3 / PSP XMB (XrossMediaBar)**
-  * GLSL-powered procedural ribbon wave shader background with glowing energy lines.
-  * Horizontal icon category bar with vertical scrolling sub-item columns.
-  * PlayStation controller glyphs (Cross, Circle, Square, Triangle).
+---
+
+### 2. Xbox Original Dashboard
+![Xbox Original Dashboard Layout](Screenshot%202026-10-17%20220030.png)
+
+* Procedural glowing planet sphere with radial gradients and rotating intersecting orbital wireframe rings.
+* Multi-pass separable Gaussian blur bloom shader pipeline.
+* Dynamic radar sweep grid background with sci-fi telemetry readouts.
+* 3D trapezoidal chevron menu buttons with live selection orb connector lines.
+
+---
+
+### 3. PlayStation 3 / PSP XMB (XrossMediaBar)
+![PlayStation 3 / PSP XMB Layout](Screenshot%202026-10-17%20220004.png)
+
+* GLSL-powered procedural ribbon wave shader background with glowing energy lines.
+* Horizontal icon category bar with vertical scrolling sub-item columns.
+* PlayStation controller glyphs (Cross, Circle, Square, Triangle).
 
 ---
 
