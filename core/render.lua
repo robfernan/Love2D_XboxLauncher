@@ -384,28 +384,40 @@ function M.drawHints(w, h)
   love.graphics.print(bmpText, bumperX + 8*S, btnY - State.smallFont:getHeight()/2)
 end
 
+local LayoutXbox = require("core.layouts.xbox")
+local LayoutXMB  = require("core.layouts.xmb")
+
+function M.getActiveLayoutEngine()
+  if State.activeLayout == "XMB" then
+    return LayoutXMB
+  else
+    return LayoutXbox
+  end
+end
+
 -------------------------------------------------------------------------------
 -- Full frame render (called from love.draw). Orchestrates the bloom pipeline.
 -------------------------------------------------------------------------------
 function M.frame()
   local w, h = love.graphics.getDimensions()
   local theme = Themes.current()
+  local engine = M.getActiveLayoutEngine()
 
-  -- 1. Radar background canvas
+  -- 1. Background canvas (delegated to active layout engine)
   love.graphics.setCanvas(State.bgCanvas)
   love.graphics.clear(theme.bg[1], theme.bg[2], theme.bg[3], 1)
-  M.drawRadarBackground(w, h)
+  engine.drawBackground(w, h)
   love.graphics.setCanvas()
 
-  -- 2. Planet + rings canvas
-  M.drawPlanetAndRings()
+  -- 2. Planet / decorative canvas (delegated to active layout engine)
+  engine.drawPlanetAndRings()
 
   -- 3. Draw background to screen
   love.graphics.setBlendMode("alpha")
   love.graphics.draw(State.bgCanvas, 0, 0)
 
-  -- 4. Multi-pass bloom on planet layer
-  if State.blurShader then
+  -- 4. Multi-pass bloom on decorative layer
+  if State.blurShader and State.activeLayout == "XBOX" then
     love.graphics.setCanvas(State.bloomA)
     love.graphics.clear(0, 0, 0, 0)
     love.graphics.setBlendMode("add")
@@ -432,17 +444,19 @@ function M.frame()
     love.graphics.draw(State.bloomA, 0, 0)
   end
 
-  -- 5. Crisp planet layer over bloom
-  love.graphics.setBlendMode("alpha")
-  love.graphics.draw(State.planetCanvas, 0, 0)
+  -- 5. Crisp decorative layer over bloom (for Xbox layout)
+  if State.activeLayout == "XBOX" then
+    love.graphics.setBlendMode("alpha")
+    love.graphics.draw(State.planetCanvas, 0, 0)
+  end
 
-  -- 6. Title bar
+  -- 6. Console Title Bar HUD
   M.drawTitleBar(w, h)
 
-  -- 7. Menu
-  M.drawMenu()
+  -- 7. Main Menu (delegated to active layout engine: Xbox or PlayStation XMB)
+  engine.drawMenu()
 
-  -- 8. Bottom hints
+  -- 8. Dynamic Controller Prompts (Xbox or PlayStation)
   M.drawHints(w, h)
 end
 

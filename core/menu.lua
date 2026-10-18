@@ -18,6 +18,15 @@ local M = {}
 -- Return the list of items visible at the current menu level.
 -------------------------------------------------------------------------------
 function M.activeItems()
+  if State.activeLayout == "XMB" then
+    local catId = State.currentMenuLevel
+    if catId == "MAIN" then
+      local cat = Menu.categories[State.selected or 1]
+      catId = cat and cat.id or "GAMES"
+    end
+    return Shortcuts.mergedItems(catId)
+  end
+
   if State.currentMenuLevel == "MAIN" then
     local out = {}
     for _, cat in ipairs(Menu.categories) do
@@ -50,8 +59,8 @@ function M.activateItem(idx)
   local item = items[idx]
   if not item then return end
 
-  -- MAIN level: enter the category.
-  if State.currentMenuLevel == "MAIN" then
+  -- In XBOX mode: MAIN level enters category
+  if State.activeLayout == "XBOX" and State.currentMenuLevel == "MAIN" then
     local cat = Menu.categories[idx]
     if cat then
       Audio.play("swoosh")
@@ -68,7 +77,9 @@ function M.activateItem(idx)
 
   -- Sub-menu: run the item's action.
   local action = item.action
-  if action == "CYCLE_THEME" then
+  if action == "CYCLE_LAYOUT" then
+    Settings.cycleLayout(1)
+  elseif action == "CYCLE_THEME" then
     Settings.cycleTheme(1)
   elseif action == "CYCLE_RES" then
     Settings.cycleResolution(1)
@@ -130,6 +141,33 @@ function M.moveSelection(delta)
 end
 
 -------------------------------------------------------------------------------
+-- Cycle Category (used by XMB horizontal axis and controller Bumpers)
+-------------------------------------------------------------------------------
+function M.cycleCategory(delta)
+  local cats = Menu.categories
+  if #cats == 0 then return end
+
+  local currentIdx = 1
+  for i, c in ipairs(cats) do
+    if c.id == State.currentMenuLevel then
+      currentIdx = i
+      break
+    end
+  end
+
+  local nextIdx = ((currentIdx - 1 + delta) % #cats) + 1
+  local targetCat = cats[nextIdx]
+  if targetCat then
+    Audio.play("swoosh")
+    State.currentMenuLevel = targetCat.id
+    State.selected = nextIdx
+    State.subSelected = 1
+    State.hoverIndex = 0
+    State.selectionAnim = 1
+  end
+end
+
+-------------------------------------------------------------------------------
 -- Left/Right cycles the currently highlighted Settings option.
 -------------------------------------------------------------------------------
 function M.cycleSettingsOption(delta)
@@ -140,7 +178,9 @@ function M.cycleSettingsOption(delta)
   if not item or not item.action then return end
 
   Audio.play("tick")
-  if item.action == "CYCLE_THEME" then
+  if item.action == "CYCLE_LAYOUT" then
+    Settings.cycleLayout(delta)
+  elseif item.action == "CYCLE_THEME" then
     Settings.cycleTheme(delta)
   elseif item.action == "CYCLE_RES" then
     Settings.cycleResolution(delta)

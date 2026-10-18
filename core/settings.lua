@@ -57,6 +57,16 @@ function M.cycleTheme(delta)
   setSettingsLabel("CYCLE_THEME", "Theme: " .. Themes.current().name)
 end
 
+function M.cycleLayout(delta)
+  if State.activeLayout == "XBOX" then
+    State.activeLayout = "XMB"
+  else
+    State.activeLayout = "XBOX"
+  end
+  Config.set("layout", State.activeLayout)
+  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (State.activeLayout == "XBOX" and "Xbox Original" or "PlayStation XMB"))
+end
+
 function M.applyWindowMode(idx)
   M.winModeIndex = ((idx - 1) % #M.winModes + 1)
   local m = M.winModes[M.winModeIndex]
@@ -132,6 +142,13 @@ function M.syncFromConfig()
   -- Refresh all Settings labels to reflect the loaded values.
   local Themes = require("core.themes")
   setSettingsLabel("CYCLE_THEME", "Theme: " .. Themes.current().name)
+
+  local savedLayout = Config.get("layout")
+  if savedLayout == "XMB" or savedLayout == "XBOX" then
+    State.activeLayout = savedLayout
+  end
+  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (State.activeLayout == "XBOX" and "Xbox Original" or "PlayStation XMB"))
+
   local p = M.resPresets[M.resIndex]
   if p then setSettingsLabel("CYCLE_RES", string.format("Resolution: %dx%d", p.w, p.h)) end
   setSettingsLabel("TOGGLE_FS", (Config.get("window.fullscreen") == true) and "Fullscreen: On" or "Fullscreen: Off")

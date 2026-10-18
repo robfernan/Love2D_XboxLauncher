@@ -21,6 +21,9 @@ M.hoverIndex = 0              -- mouse hover index (0 = none); overrides keyboar
 -- Active theme index (1..#themeColors). Initialized from Config in love.load().
 M.activeTheme = 4
 
+-- Active Layout ("XBOX" or "XMB")
+M.activeLayout = "XBOX"
+
 -- Window dragging state
 M.isDragging = false
 M.dragX, M.dragY = 0, 0

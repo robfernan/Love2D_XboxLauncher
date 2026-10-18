@@ -33,6 +33,7 @@ M.categories = {
     { name = "Crunchyroll",url = "https://crunchyroll.com",        icon = "icons/crunchyroll_icon.png" },
   }},
   { name = "SETTINGS", id = "SETTINGS", items = {
+    { name = "Layout: Xbox Original",action = "CYCLE_LAYOUT",  icon = "icons/theme_icon.png" },
     { name = "Theme: Purple",        action = "CYCLE_THEME",   icon = "icons/theme_icon.png" },
     { name = "Resolution: 1280x720", action = "CYCLE_RES",     icon = "icons/settings_icon.png" },
     { name = "Fullscreen: Off",      action = "TOGGLE_FS",     icon = "icons/video_icon.png" },

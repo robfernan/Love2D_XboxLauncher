@@ -321,9 +321,15 @@ function love.keypressed(key)
     Menu.moveSelection(1)
   elseif key == "up" then
     Menu.moveSelection(-1)
-  -- Left/Right cycles the *currently highlighted* Settings option.
-  elseif (key == "left" or key == "right") and State.currentMenuLevel == "SETTINGS" then
-    Menu.cycleSettingsOption((key == "right") and 1 or -1)
+  -- Left/Right navigation
+  elseif key == "left" or key == "right" then
+    local delta = (key == "right") and 1 or -1
+    if State.activeLayout == "XMB" then
+      -- In XMB, Left/Right always navigates the category tabs
+      Menu.cycleCategory(delta)
+    elseif State.currentMenuLevel == "SETTINGS" then
+      Menu.cycleSettingsOption(delta)
+    end
   -- A / Enter activates the currently highlighted item.
   elseif key == "a" or key == "return" or key == "kpenter" then
     Menu.activateItem(Menu.activeIndex())
