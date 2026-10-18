@@ -207,6 +207,20 @@ function M.mergedItems(catId)
   if cat and cat.items then
     for _, it in ipairs(cat.items) do table.insert(out, it) end
   end
+
+  -- Auto-populate installed Steam games in GAMES category
+  if catId == "GAMES" then
+    local Steam = require("core.steam")
+    for _, game in ipairs(Steam.discoveredGames) do
+      table.insert(out, {
+        name = game.name,
+        url = game.url,
+        icon = game.icon,
+        isSteamGame = true,
+      })
+    end
+  end
+
   for _, s in ipairs(M.forCategory(catId)) do
     table.insert(out, { name = s.name, url = s.url, cmd = s.cmd, icon = s.icon, shortcutId = s.id })
   end
