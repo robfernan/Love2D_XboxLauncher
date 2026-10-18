@@ -176,6 +176,13 @@ function love.load()
     if shaderOk then State.blurShader = shader end
   end
 
+  -- Authentic PSP/PS3 dynamic wave shader
+  local okXmb, xmbSrc = pcall(function() return love.filesystem.read("shaders/xmb_wave.glsl") end)
+  if okXmb and type(xmbSrc) == "string" then
+    local xmbOk, xmbShader = pcall(love.graphics.newShader, xmbSrc)
+    if xmbOk then State.xmbShader = xmbShader end
+  end
+
   -- Fonts (bundled arial.ttf with safe fallback), scaled to current layout.
   rebuildFonts()
 

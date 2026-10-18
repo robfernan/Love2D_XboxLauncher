@@ -38,7 +38,10 @@ local WATCH_FILES = {
   "core/gamepad.lua",
   "core/audio.lua",
   "core/settings.lua",
+  "core/layouts/xbox.lua",
+  "core/layouts/xmb.lua",
   "shaders/blur.glsl",
+  "shaders/xmb_wave.glsl",
 }
 
 -------------------------------------------------------------------------------

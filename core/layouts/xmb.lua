@@ -53,68 +53,27 @@ function M.drawBackground(w, h)
   local theme = Themes.current()
   local glowR, glowG, glowB = theme.glow[1], theme.glow[2], theme.glow[3]
   local colorR, colorG, colorB = theme.color[1], theme.color[2], theme.color[3]
+  local bgR, bgG, bgB = theme.bg[1], theme.bg[2], theme.bg[3]
   local S = Layout.scale()
 
-  -- 1) Rich Radial/Vertical Atmosphere Gradient
-  love.graphics.setBlendMode("alpha")
-  for row = 0, h, 8 do
-    local grad = (row / h)
-    love.graphics.setColor(
-      colorR * 0.12 * (1 - grad * 0.6),
-      colorG * 0.12 * (1 - grad * 0.6),
-      colorB * 0.12 * (1 - grad * 0.6), 1.0)
-    love.graphics.rectangle("fill", 0, row, w, 8)
+  -- 1) Authentic PSP / PS3 Wave GLSL Shader (GPU Accelerated)
+  if State.xmbShader then
+    State.xmbShader:send("resolution", {w, h})
+    State.xmbShader:send("time", State.timeacc)
+    State.xmbShader:send("waveColor", {glowR, glowG, glowB})
+    State.xmbShader:send("bgColor", {bgR, bgG, bgB})
+    love.graphics.setShader(State.xmbShader)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.rectangle("fill", 0, 0, w, h)
+    love.graphics.setShader()
+  else
+    -- Fallback procedural gradient & ribbon
+    love.graphics.setColor(bgR * 0.6, bgG * 0.6, bgB * 0.6, 1.0)
+    love.graphics.rectangle("fill", 0, 0, w, h)
   end
 
-  -- Subtle horizontal glow horizon
+  -- 2) Floating Ambient Sparkle Dust on top of waves
   love.graphics.setBlendMode("add")
-  love.graphics.setColor(glowR, glowG, glowB, 0.08)
-  love.graphics.rectangle("fill", 0, h * 0.44 - 60*S, w, 120*S)
-
-  -- 2) Authentic PlayStation Silk Wave Ribbons (Filled translucent ribbons)
-  local t = State.timeacc * 0.5
-  local waveLayers = 6
-
-  for layer = 1, waveLayers do
-    local step = 24
-    local layerOffset = layer * 0.95
-    local alpha = 0.18 - (layer * 0.022)
-    love.graphics.setColor(glowR, glowG, glowB, alpha)
-
-    local baseY = h * 0.52 + math.sin(t * 0.4 + layerOffset) * 45 * S
-    local topPoints = {}
-    for x = 0, w + step, step do
-      local waveY = baseY 
-        + math.sin(x * 0.0025 + t * 0.8 + layerOffset) * 60 * S
-        + math.cos(x * 0.0042 - t * 0.5 + layerOffset * 1.5) * 40 * S
-      table.insert(topPoints, {x = x, y = waveY})
-    end
-
-    -- Draw ribbon lines with dynamic thickness
-    love.graphics.setLineWidth((2.0 + layer * 0.6) * S)
-    local linePoints = {}
-    for _, pt in ipairs(topPoints) do
-      table.insert(linePoints, pt.x)
-      table.insert(linePoints, pt.y)
-    end
-    if #linePoints >= 4 then
-      love.graphics.line(linePoints)
-    end
-
-    -- Secondary echo wave
-    love.graphics.setColor(colorR, colorG, colorB, alpha * 0.5)
-    local echoPoints = {}
-    for _, pt in ipairs(topPoints) do
-      table.insert(echoPoints, pt.x)
-      table.insert(echoPoints, pt.y + 18 * S)
-    end
-    if #echoPoints >= 4 then
-      love.graphics.setLineWidth(1.2 * S)
-      love.graphics.line(echoPoints)
-    end
-  end
-
-  -- 3) Floating Ambient Sparkle Dust
   for _, sp in ipairs(sparkles) do
     sp.x = (sp.x + sp.speedX * 0.016) % 1.0
     sp.y = (sp.y + sp.speedY * 0.016) % 1.0
