@@ -384,12 +384,15 @@ function M.drawHints(w, h)
   love.graphics.print(bmpText, bumperX + 8*S, btnY - State.smallFont:getHeight()/2)
 end
 
-local LayoutXbox = require("core.layouts.xbox")
-local LayoutXMB  = require("core.layouts.xmb")
+local LayoutXbox   = require("core.layouts.xbox")
+local LayoutXMB    = require("core.layouts.xmb")
+local LayoutBlades = require("core.layouts.blades")
 
 function M.getActiveLayoutEngine()
   if State.activeLayout == "XMB" then
     return LayoutXMB
+  elseif State.activeLayout == "BLADES" then
+    return LayoutBlades
   else
     return LayoutXbox
   end

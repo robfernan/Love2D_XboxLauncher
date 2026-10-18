@@ -193,6 +193,10 @@ function love.load()
   -- Live hot reloader (auto-recompiles scripts and shaders on save)
   HotReload.init()
 
+  -- Scan for installed Steam games (pure Lua cross-platform)
+  local Steam = require("core.steam")
+  Steam.scan()
+
   -- Render canvases + icon cache.
   local w, h = love.graphics.getDimensions()
   makeCanvases(w, h)
@@ -331,8 +335,8 @@ function love.keypressed(key)
   -- Left/Right navigation
   elseif key == "left" or key == "right" then
     local delta = (key == "right") and 1 or -1
-    if State.activeLayout == "XMB" then
-      -- In XMB, Left/Right always navigates the category tabs
+    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
+      -- In XMB and Blades, Left/Right navigates the category blades/tabs
       Menu.cycleCategory(delta)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(delta)

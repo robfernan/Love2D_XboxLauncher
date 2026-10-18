@@ -57,14 +57,23 @@ function M.cycleTheme(delta)
   setSettingsLabel("CYCLE_THEME", "Theme: " .. Themes.current().name)
 end
 
+M.layoutList = { "XBOX", "XMB", "BLADES" }
+M.layoutNames = {
+  XBOX   = "Xbox Original",
+  XMB    = "PlayStation XMB",
+  BLADES = "Xbox 360 Blades",
+}
+
 function M.cycleLayout(delta)
-  if State.activeLayout == "XBOX" then
-    State.activeLayout = "XMB"
-  else
-    State.activeLayout = "XBOX"
+  local curIdx = 1
+  for i, lay in ipairs(M.layoutList) do
+    if lay == State.activeLayout then curIdx = i break end
   end
+  local nextIdx = ((curIdx - 1 + delta) % #M.layoutList) + 1
+  State.activeLayout = M.layoutList[nextIdx]
+
   Config.set("layout", State.activeLayout)
-  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (State.activeLayout == "XBOX" and "Xbox Original" or "PlayStation XMB"))
+  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (M.layoutNames[State.activeLayout] or State.activeLayout))
 end
 
 function M.applyWindowMode(idx)
@@ -144,10 +153,10 @@ function M.syncFromConfig()
   setSettingsLabel("CYCLE_THEME", "Theme: " .. Themes.current().name)
 
   local savedLayout = Config.get("layout")
-  if savedLayout == "XMB" or savedLayout == "XBOX" then
+  if savedLayout and M.layoutNames[savedLayout] then
     State.activeLayout = savedLayout
   end
-  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (State.activeLayout == "XBOX" and "Xbox Original" or "PlayStation XMB"))
+  setSettingsLabel("CYCLE_LAYOUT", "Layout: " .. (M.layoutNames[State.activeLayout] or State.activeLayout))
 
   local p = M.resPresets[M.resIndex]
   if p then setSettingsLabel("CYCLE_RES", string.format("Resolution: %dx%d", p.w, p.h)) end

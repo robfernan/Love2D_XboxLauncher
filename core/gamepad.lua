@@ -115,7 +115,7 @@ function M.gamepadpressed(joystick, button)
   elseif button == "dpup" then
     Menu.moveSelection(-1)
   elseif button == "dpleft" then
-    if State.activeLayout == "XMB" then
+    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
       M.cycleCategory(-1)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(-1)
@@ -123,7 +123,7 @@ function M.gamepadpressed(joystick, button)
       M.cycleCategory(-1)
     end
   elseif button == "dpright" then
-    if State.activeLayout == "XMB" then
+    if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
       M.cycleCategory(1)
     elseif State.currentMenuLevel == "SETTINGS" then
       Menu.cycleSettingsOption(1)

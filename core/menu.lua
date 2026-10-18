@@ -18,7 +18,7 @@ local M = {}
 -- Return the list of items visible at the current menu level.
 -------------------------------------------------------------------------------
 function M.activeItems()
-  if State.activeLayout == "XMB" then
+  if State.activeLayout == "XMB" or State.activeLayout == "BLADES" then
     local catId = State.currentMenuLevel
     if catId == "MAIN" then
       local cat = Menu.categories[State.selected or 1]
