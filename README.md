@@ -1,142 +1,149 @@
-# Xbox Concept Dashboard (Love2D)
+# Xbox Concept Dashboard
 
-A retro-futuristic, multi-era console desktop launcher and game manager built with **Love2D 11.5**. Experience authentic console dashboard layouts—including the **Xbox Original Sci-Fi Dashboard**, the **Xbox 360 NXE (New Xbox Experience)**, and the **PlayStation 3 / PSP XMB (XrossMediaBar)**—with dynamic procedural backgrounds, sound effects, full controller support, a virtual on-screen keyboard, instant search, and real application launching.
+One **Love2D 11.5** launcher, three console eras. Switch between the **Xbox Original** sci-fi dashboard, the **Xbox 360 NXE** (New Xbox Experience), and the **PlayStation 3 / PSP XMB** (XrossMediaBar), then launch the games, sites, and local programs already on your machine. Keyboard, mouse, and a controller drive the same library.
 
----
+<p align="center">
+  <a href="https://youtu.be/KIvuYsxpoYs">
+    <img src="https://i.ytimg.com/vi/KIvuYsxpoYs/maxresdefault.jpg" alt="Watch the demo: Transforming My PC Into a Console" width="720">
+  </a>
+</p>
 
-## Multiple Console Layout Engines
+**[Watch the demo](https://youtu.be/KIvuYsxpoYs)** — *Transforming My PC Into a Console: Custom Xbox-Styled Launcher (Love2D)*
 
-Switch seamlessly between dashboard eras at any time via **F6**, the controller **Back / Select** button, or the top title bar badge:
+> **Star [Love2D_XboxLauncher](https://github.com/robfernan/Love2D_XboxLauncher)** if this is the desktop dashboard you wanted.
 
-### 1. Xbox 360 NXE (New Xbox Experience, 2008–2010)
-![Xbox 360 NXE Layout](Screenshot%202026-10-17%20220017.png)
-
-* Iconic twilight snowy mountain backdrop with shaded mountain facets, pine ridges, crescent moon, and twinkling stars.
-* Real-time reflective frozen icy lake floor mirroring the cards and item counters.
-* Animated concentric water ripple rings emanating from a 3D chrome Xbox Guide button orb.
-* Horizontal 3D perspective card carousel ("The Channel") with glossy active card and lime-green trailing perspective cards.
-* Top-right Gamertag profile HUD with vector mail/friend notifications and Gamerpic tile.
-* Centered category column navigating your actual categories: **`GAMES`**, **`BROWSE`**, **`MEDIA`**, and **`SETTINGS`**.
+Cycle eras with **F6**, the controller **Back / Select** button, or the title-bar layout badge. The active layout is saved with the rest of your settings.
 
 ---
 
-### 2. Xbox Original Dashboard
-![Xbox Original Dashboard Layout](Screenshot%202026-10-17%20220030.png)
+## Three dashboard eras
 
-* Procedural glowing planet sphere with radial gradients and rotating intersecting orbital wireframe rings.
-* Multi-pass separable Gaussian blur bloom shader pipeline.
-* Dynamic radar sweep grid background with sci-fi telemetry readouts.
-* 3D trapezoidal chevron menu buttons with live selection orb connector lines.
+### Xbox 360 NXE
+
+![Xbox 360 NXE layout: twilight mountain, reflective floor, and a horizontal card carousel on the Settings channel](Screenshot%202026-10-17%20220017.png)
+
+* Twilight mountain backdrop, star field, and a mirrored floor under the cards.
+* Horizontal channel carousel: one large active card, with the rest trailing in perspective.
+* Profile tile that shows the local username, with the NXE mail and friend badges beside it.
+* Guide-button orb in the corner, with ripple rings on the floor.
+* The columns are your real categories: **GAMES**, **BROWSE**, **MEDIA**, and **SETTINGS**. Up and down change category; left and right move the carousel.
+
+### Xbox Original
+
+![Xbox Original layout: glowing planet, orbital rings, radar grid, and trapezoidal GAMES, BROWSE, MEDIA, and SETTINGS blades](Screenshot%202026-10-17%20220030.png)
+
+* Glowing planet and orbital rings over a radar grid, with a bloom pass on the dashboard (`shaders/blur.glsl`).
+* Trapezoidal blades and a live connector from the planet to the selected entry.
+* Up and down move the blade list. This is the layout where **B / Escape** steps back out of a category.
+
+### PlayStation 3 / PSP XMB
+
+![PlayStation XMB layout: ribbon-wave background, horizontal category icons, and a vertical item column](Screenshot%202026-10-17%20220004.png)
+
+* Procedural ribbon-wave background (`shaders/xmb_wave.glsl`).
+* Horizontal category bar and a vertical item column, in the XrossMediaBar pattern. Left and right change category; up and down move the column.
+* Face-button hints follow the connected controller: Xbox **A/B/X/Y** or PlayStation **Cross / Circle / Square / Triangle**.
+
+**F6** cycles **Xbox Original → PlayStation XMB → Xbox 360 NXE**. A fresh launch opens on the NXE layout.
 
 ---
 
-### 3. PlayStation 3 / PSP XMB (XrossMediaBar)
-![PlayStation 3 / PSP XMB Layout](Screenshot%202026-10-17%20220004.png)
+## What you can launch
 
-* GLSL-powered procedural ribbon wave shader background with glowing energy lines.
-* Horizontal icon category bar with vertical scrolling sub-item columns.
-* PlayStation controller glyphs (Cross, Circle, Square, Triangle).
-
----
-
-## Core Features
-
-* **Real Application & Game Launcher**: Spawns local `.exe` and `.bat` programs detached (Windows `start`, macOS `open`, Linux `setsid`) so they keep running after the launcher exits. Also opens web apps and URLs in your default browser.
-* **Steam Game Auto-Detection**: Pure Lua cross-platform scanner parses `libraryfolders.vdf` and `.acf` manifests to automatically import installed Steam games into your **GAMES** category.
-* **Drag-and-Drop Shortcut Creation**: Drag any `.exe`, folder, file, or image directly into the launcher window to add it immediately.
-* **Shortcut Manager & Wizard (`Settings → + Add Shortcut…` / `Y` button)**: Create, edit, and organize shortcuts with custom names, categories, and icons. All items persist cleanly to `userdata/config.json`.
-* **Quick Search Overlay (`Ctrl + F` or Gamepad `Y`)**: Instant fuzzy search across your entire game and application catalog.
-* **Virtual On-Screen Keyboard (OSK)**: Full console virtual keyboard with controller navigation, mouse clicks, and shortcuts (`A` type, `X` backspace, `Y` space, `Start` confirm).
-* **Full Gamepad / Controller Support**: Native XInput / DirectInput support with analog stick navigation, deadzones, trigger handling, and dynamic prompt badge rendering (Xbox `A/B/X/Y` vs. PlayStation `✕/○/□/△`).
-* **Custom Frameless Window**: Clean borderless window with draggable title bar, vector close (`✕`) and minimize (`–`) buttons, live digital clock, and layout switcher badge.
-* **Live Audio Synthesis**: Procedurally synthesized retro UI sound effects (blip, tick, swoosh, cancel, launch) without relying on external `.wav` files.
-* **Dynamic Color Themes & Scaling**: Multiple color profiles (**Green**, **Blue**, **Red**, **Purple**), resolution presets (720p→1440p), and UI scaling (75%–150%) with crisp proportional font scaling.
+* **Programs and URLs.** Executables and scripts spawn detached — Windows `start`, macOS `open`, Linux `setsid` — so they keep running after this window closes. URL shortcuts open in the default browser.
+* **Steam library scan.** A pure-Lua reader of `libraryfolders.vdf` and app manifests lists installed Steam games under **GAMES** and launches them with `steam://rungameid/<id>`. It checks the usual install locations on Windows, macOS, and Linux.
+* **Drop to add.** Drop an executable, file, or image on the window. The shortcut wizard opens with the name and path filled in.
+* **Shortcut wizard.** **Settings → + Add Shortcut…** creates an entry. **Y** or **E** edits the highlighted custom shortcut; **X** removes it. Everything persists in `userdata/config.json`.
+* **Quick search.** **Ctrl+F**. On a controller, **Y / Triangle** edits the highlighted custom shortcut, and opens search for everything else.
+* **On-screen keyboard.** Console keyboard for the wizard. On a controller: **A** types the highlighted key, **X** backspaces, **Y** inserts a space, **Start** confirms, **B** closes it.
+* **Frameless window.** Drag the title bar to move it. Minimize, close, a clock, and the layout badge live on that bar. Quit with the close button.
+* **Synthesized UI sounds.** Ticks, backs, and select cues are generated in Love2D at runtime.
+* **Themes and scale.** Accents: **Green**, **Blue**, **Red**, **Purple**. Resolutions: **1280×720**, **1600×900**, **1920×1080**, **2560×1440**. UI scale: **75%**, **100%**, **125%**, **150%**. Window mode is **Borderless** or **Windowed**.
 
 ---
 
 ## Controls
 
-### Keyboard & Mouse
+### Keyboard and mouse
 
-| Key / Action | Description |
+| Key / action | What it does |
 | :--- | :--- |
-| **Up / Down** | Navigate vertical menu items (or categories in NXE) |
-| **Left / Right** | Navigate categories (or horizontal 3D card carousel in NXE) |
-| **A / Enter / Space** | Select / activate item, open category, or launch app |
-| **B / Escape** | Go back one level (at the root menu, app remains open) |
-| **X** | Remove selected custom shortcut |
-| **Y / E** | Edit highlighted shortcut |
-| **F6** | Quick cycle layout (Xbox Original ↔ Xbox 360 NXE ↔ PS3 XMB) |
-| **Ctrl + F** | Open Quick Search overlay |
-| **Title Bar Drag** | Click and drag the top title bar to move the window |
-| **Title Bar Buttons** | Minimize (`–`), close (`✕`), or click `[Layout: ...]` badge to switch layouts |
+| **Up / Down** | Next item. On NXE, next or previous category. |
+| **Left / Right** | XMB category, NXE carousel, or the value under a Settings row. |
+| **A / Enter** | Open the highlighted category or launch the highlighted item. |
+| **B / Escape** | Step back on the Xbox Original layout. Quit with the title-bar close button. |
+| **X** | Remove the highlighted custom shortcut. |
+| **Y / E** | Edit the highlighted custom shortcut. |
+| **F6** | Cycle layout. |
+| **Ctrl+F** | Quick search. |
+| **Title bar** | Drag to move. **–** minimizes, **✕** closes, the layout badge switches eras. |
 
-### Gamepad / Controller
+### Gamepad
 
-| Button | Action |
+| Button | What it does |
 | :--- | :--- |
-| **D-Pad / Left Stick** | Navigate items, cards, and categories |
-| **A / Cross (✕)** | Select / Launch |
-| **B / Circle (○)** | Back / Cancel |
-| **X / Square (□)** | Remove shortcut |
-| **Y / Triangle (△)** | Quick Search (or edit shortcut in menu) |
-| **LB / RB (L1 / R1)** | Fast category switching |
-| **Back / Select / View** | Cycle layout engine |
+| **D-pad / left stick** | Move through items, cards, and categories. |
+| **A / Cross** | Select or launch. |
+| **B / Circle** | Back on the Xbox Original layout. |
+| **X / Square** | Remove the highlighted custom shortcut. |
+| **Y / Triangle** | Edit a custom shortcut, or open Quick Search. |
+| **LB / RB (L1 / R1)** | Switch category. |
+| **Back / Select / View** | Cycle layout. |
 
 ---
 
-## Project Structure
+## Run it
 
+[LÖVE 11.5](https://love2d.org/) on Windows, macOS, or Linux. From the repo root:
+
+```bash
+love .
 ```
-Xbox_Launcher/
-├── conf.lua             — LÖVE window/config bootstrap
-├── main.lua             — Application entrypoint & love.* event routing
-├── core/                — Modular core subsystems
-│   ├── config.lua       — Persistent configuration loader (userdata/config.json)
-│   ├── state.lua        — Shared runtime state & font/canvas cache
-│   ├── themes.lua       — Color theme palettes
-│   ├── menu_data.lua    — Category tree definition (GAMES, BROWSE, MEDIA, SETTINGS)
-│   ├── shortcuts.lua    — Shortcut storage and category merging
-│   ├── launcher.lua     — Detached process execution & URL launcher
-│   ├── steam.lua        — Cross-platform Steam library scanner
-│   ├── wizard.lua       — Shortcut creation & edit modal
-│   ├── keyboard.lua     — Console On-Screen Virtual Keyboard (OSK)
-│   ├── search.lua       — Instant fuzzy search overlay
-│   ├── gamepad.lua      — Controller input mapping & prompt badges
-│   ├── audio.lua        — Procedural retro sound synthesis
-│   ├── settings.lua     — Window mode, resolution, and theme settings
-│   ├── layout.lua       — Responsive UI scaling & hit-test helpers
-│   ├── menu.lua         — Menu navigation state machine
-│   ├── render.lua       — Title bar, bloom pipeline, and frame coordination
-│   ├── json.lua         — Dependency-free pure Lua JSON library
-│   └── layouts/         — Dashboard Layout Engines
-│       ├── xbox.lua     — Xbox Original Sci-Fi Dashboard
-│       ├── blades.lua   — Xbox 360 NXE 3D Channel Carousel Dashboard
-│       └── xmb.lua      — PlayStation 3 / PSP XMB Dashboard
-├── icons/               — App and platform icons
-├── shaders/             — GLSL shaders (bloom blur, XMB ribbon wave)
-├── rajdhani.ttf         — Primary dashboard font
-└── .vscode/tasks.json   — Build task to run via Ctrl+Shift+B
-```
+
+VS Code’s default build task (**Ctrl+Shift+B**) launches `love.exe` from `C:\Love2D\love-11.5-win64\` on Windows. Shortcuts, theme, scale, window placement, and the active layout are written to `userdata/config.json` (that folder is gitignored).
 
 ---
 
-## Requirements & Running
+## Project structure
 
-* **LÖVE (Love2D) 11.5** ([love2d.org](https://love2d.org/))
-* **OS:** Windows, macOS, or Linux
-
-### How to Run
-
-1. Clone or open this repository in VS Code.
-2. Launch using **`Ctrl + Shift + B`** in VS Code (runs default build task), or run from terminal:
-   ```bash
-   love .
-   ```
-3. Custom shortcuts, window settings, and layout preferences are automatically saved to `userdata/config.json`.
+```
+Love2D_XboxLauncher/
+├── conf.lua                 LÖVE window bootstrap
+├── main.lua                 love.* callbacks and input routing
+├── core/
+│   ├── config.lua           userdata/config.json
+│   ├── state.lua            Shared runtime state
+│   ├── menu.lua             Navigation state machine
+│   ├── menu_data.lua        GAMES, BROWSE, MEDIA, SETTINGS
+│   ├── launcher.lua         Detached programs and browser URLs
+│   ├── steam.lua            Steam library scanner
+│   ├── shortcuts.lua        Custom shortcut storage
+│   ├── wizard.lua           Add / edit shortcut modal
+│   ├── keyboard.lua         On-screen keyboard
+│   ├── search.lua           Quick search overlay
+│   ├── gamepad.lua          Controller mapping and prompt glyphs
+│   ├── audio.lua            Procedural UI sounds
+│   ├── themes.lua           Green, Blue, Red, Purple
+│   ├── settings.lua         Resolution, window mode, scale, layout cycle
+│   ├── layout.lua           1280×720-relative UI scale
+│   ├── render.lua           Title bar, bloom, frame coordination
+│   ├── json.lua             Pure-Lua JSON
+│   ├── hotreload.lua        Dev reload for Lua and shaders
+│   └── layouts/
+│       ├── xbox.lua         Xbox Original
+│       ├── blades.lua       Xbox 360 NXE
+│       └── xmb.lua          PlayStation 3 / PSP XMB
+├── icons/                   Menu and platform icons
+├── shaders/                 Bloom blur, rings, XMB wave
+└── rajdhani.ttf             Dashboard font
+```
 
 ---
 
 ## License
 
-This project is open-source and intended for personal, hobbyist, and custom launcher use.
+GitHub lists this repository as **NOASSERTION** on purpose. [LICENSE](LICENSE) is a custom source-available grant, and the license detector only fills that field for SPDX identifiers. The label is expected.
+
+You may clone, modify, and run it for personal non-commercial use, and you may share free plugins or themes that interface with it. Packaged binaries and storefront builds stay with the author. Copyright (c) 2026 Robert Fernandez. The exact terms are in [LICENSE](LICENSE).
+
+> **Star [Love2D_XboxLauncher](https://github.com/robfernan/Love2D_XboxLauncher)** so the next person looking for an Xbox, 360 NXE, or XMB desktop can find it.
