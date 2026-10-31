@@ -20,7 +20,8 @@ local M = {}
 local DEFAULTS = {
   theme = { index = 4 },                 -- active color theme (1..N)
   uiScale = 1.0,                         -- global UI scale factor (0.75 .. 2.0)
-  setup = { done = false },              -- first-run wizard completed? (see core/setup)
+  first_run = true,                      -- true until the setup wizard completes
+  setup = { done = false },              -- legacy alias kept for back-compat
   window = {
     width = 1280,
     height = 720,
@@ -150,6 +151,26 @@ end
 
 function M.isDirty()
   return dirty
+end
+
+-------------------------------------------------------------------------------
+-- First-run helpers. `first_run` defaults to true so a fresh install (no
+-- config.json, or a config that never set the flag) boots straight into the
+-- setup wizard. Once the wizard completes it flips this to false and saves.
+-------------------------------------------------------------------------------
+
+function M.isFirstRun()
+  local v = M.get("first_run")
+  -- Treat nil as "true" so a missing key still triggers the wizard on first boot.
+  if type(v) ~= "boolean" then return true end
+  return v
+end
+
+function M.setFirstRun(value)
+  M.set("first_run", value == true)
+  -- Keep the legacy `setup.done` flag in sync so older code paths that read it
+  -- still see a consistent state.
+  M.set("setup.done", value ~= true)
 end
 
 -- Reset a single setting back to its default value.
